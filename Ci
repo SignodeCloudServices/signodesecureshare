@@ -1,0 +1,42 @@
+name: CI
+
+# WHEN this runs. A pull request targeting main triggers it, and every
+# subsequent push to that PR branch re-triggers it.
+on:
+  pull_request:
+    branches: [ main ]
+
+# Cancel an in-progress run if new commits arrive on the same PR. Without
+# this you queue runs for code nobody is looking at any more.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest        # the runner image
+
+    steps:
+      # Clone the repo onto the runner. Nothing works without this.
+      - uses: actions/checkout@v4
+
+      # Install Node 20 and enable npm's dependency cache, keyed on the
+      # lockfile. Unchanged dependencies restore from cache instead of
+      # downloading 267 packages again.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Lockfile-exact install. Fails if package.json and the lockfile
+      # disagree - which is what you want.
+      - run: npm ci
+
+      # Build. package.json runs `tsc -b && vite build`, so TypeScript
+      # errors fail here. This is the real gate.
+      - run: npm run build
+
+      # Optional but useful: prove the build actually produced output.
+      # A build that "succeeds" and emits nothing is a real failure mode.
+      - name: Verify build output
+        run: test -f dist/index.html || (echo "dist/index.html missing" && exit 1)

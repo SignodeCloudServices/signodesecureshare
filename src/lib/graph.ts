@@ -203,3 +203,43 @@ export async function getMe(
 ): Promise<{ displayName: string; userPrincipalName: string; id: string }> {
   return graphFetch(msal, account, "/me?$select=displayName,userPrincipalName,id");
 }
+
+/**
+ * Folder paths at or beneath `rootPath`, for a destination picker.
+ *
+ * Depth-limited: a full recursive walk of a large tree would be slow and is
+ * not what a partner needs. Two levels covers a partner folder and its
+ * subfolders.
+ *
+ * Only folders the user can actually see come back — Graph trims to their
+ * ACLs, so an inaccessible subfolder simply never appears as an option.
+ */
+export async function listFolderPaths(
+  msal: IPublicClientApplication,
+  account: AccountInfo,
+  rootPath: string,
+  maxDepth = 2
+): Promise<string[]> {
+  const out: string[] = [rootPath];
+
+  async function walk(path: string, depth: number): Promise<void> {
+    if (depth >= maxDepth) return;
+    let children: DriveItem[];
+    try {
+      children = await listChildren(msal, account, path);
+    } catch {
+      // A denied or missing subfolder is not an error here - it simply does
+      // not become an upload destination.
+      return;
+    }
+    const folders = children.filter((c) => c.isFolder);
+    for (const f of folders) {
+      const childPath = `${path}/${f.name}`;
+      out.push(childPath);
+      await walk(childPath, depth + 1);
+    }
+  }
+
+  await walk(rootPath, 0);
+  return out;
+}

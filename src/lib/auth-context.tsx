@@ -20,8 +20,11 @@ import { pathsForGroups, scopeByGroupId, type FolderScope } from "./folder-scope
 
 /** Entra app role or group that marks a portal administrator. */
 const ADMIN_GROUP_IDS: string[] = [
-  // Populate with an IT admin group object ID to grant "*" scope.
-  // Deliberately empty: an unset admin list fails closed.
+  // sg-secureshare-admins — portal administrators.
+  // Membership here grants "*" scope in the UI. It does NOT grant any
+  // SharePoint access: an admin who is not separately permissioned on a
+  // folder will see it listed and get an empty result from Graph.
+  "389d5c85-73f2-47dd-8f61-1b916dae4e3e",
 ];
 
 export type AuthState = {

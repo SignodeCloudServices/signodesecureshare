@@ -1,5 +1,7 @@
 import * as React from "react";
 import { usePersona } from "@/lib/persona-context";
+import { useAuth, DEMO_MODE } from "@/lib/auth-context";
+import { LiveUpload } from "./LiveUpload";
 import { isPathInScope } from "@/lib/personas";
 import { flattenTree, FOLDER_TREE } from "@/lib/folderTree";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,7 +31,35 @@ function humanSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/**
+ * Live mode uses LiveUpload, whose destination list is built from the user's
+ * own scope. The mock implementation below is the demo-mode experience; it
+ * reads folderTree.ts, which is demo data and shows the entire tree.
+ */
 export function UploadPage() {
+  const { isAuthenticated } = useAuth();
+
+  if (!DEMO_MODE) {
+    if (!isAuthenticated) return null;
+    return (
+      <div className="mx-auto max-w-5xl px-6 py-10">
+        <h1 className="text-3xl font-bold text-[hsl(var(--signode-black))]">
+          Upload
+        </h1>
+        <p className="mt-2 text-muted-foreground">
+          Drag and drop files below.
+        </p>
+        <div className="mt-6">
+          <LiveUpload />
+        </div>
+      </div>
+    );
+  }
+
+  return <UploadPageInner />;
+}
+
+function UploadPageInner() {
   const { persona } = usePersona();
   const { toast } = useToast();
   const [destination, setDestination] = React.useState("");

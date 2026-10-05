@@ -72,17 +72,17 @@ export const msalConfig: Configuration = {
  * ACLs. A user who cannot see a folder gets nothing back for it.
  */
 export const loginRequest: PopupRequest = {
-  scopes: [
-    "User.Read",
-    "Sites.Read.All",
-    "Files.ReadWrite.All",
-    "GroupMember.Read.All", // getMemberGroups — see CLAUDE.md
+scopes: [
+  "User.Read",
+  "Sites.Read.All",
+  "Files.ReadWrite.All",
+  "GroupMember.ReadWrite.All",
   ],
 };
 
 /** Scopes for silent token acquisition before each Graph call. */
 export const graphRequest = {
-  scopes: ["Sites.Read.All", "Files.ReadWrite.All", "GroupMember.Read.All"],
+  scopes: ["User.Read", "Sites.Read.All", "Files.ReadWrite.All", "GroupMember.ReadWrite.All"],
 };
 
 export const GRAPH_BASE = "https://graph.microsoft.com/v1.0";

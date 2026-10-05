@@ -1,6 +1,8 @@
 import * as React from "react";
 import { useSearchParams } from "react-router-dom";
 import { usePersona } from "@/lib/persona-context";
+import { useAuth, DEMO_MODE } from "@/lib/auth-context";
+import { LiveScopedBrowser } from "./LiveScopedBrowser";
 import { isPathInScope } from "@/lib/personas";
 import { FOLDER_TREE, findNode, type FolderNode } from "@/lib/folderTree";
 import { AccessRestricted } from "@/components/signode/AccessRestricted";
@@ -343,7 +345,37 @@ function FolderDetail({
 // Page
 // ---------------------------------------------------------------------------
 
+/**
+ * Live mode routes everyone except administrators to the scoped browser: it
+ * opens at their own folder and exposes nothing above or beside it. The tree
+ * navigator below is the admin view and the demo-mode experience.
+ */
 export function BrowsePage() {
+  const { isAdmin, isAuthenticated } = useAuth();
+
+  if (!DEMO_MODE) {
+    if (!isAuthenticated) return null;
+    if (!isAdmin) {
+      return (
+        <div className="mx-auto max-w-5xl px-6 py-10">
+          <h1 className="text-3xl font-bold text-[hsl(var(--signode-black))]">
+            Browse
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            Files shared with you.
+          </p>
+          <div className="mt-6">
+            <LiveScopedBrowser />
+          </div>
+        </div>
+      );
+    }
+  }
+
+  return <BrowsePageInner />;
+}
+
+function BrowsePageInner() {
   const { persona } = usePersona();
   const [params, setParams] = useSearchParams();
 

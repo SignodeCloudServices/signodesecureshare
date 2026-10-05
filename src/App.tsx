@@ -7,6 +7,7 @@ import { ArchitecturePage } from "@/pages/ArchitecturePage";
 import { Routes, Route } from "react-router-dom";
 import { SignodeHeader } from "@/components/signode/SignodeHeader";
 import { SignInGate } from "@/components/signode/SignInGate";
+import { RequireAdmin } from "@/components/signode/RequireAdmin";
 import { Toaster } from "@/components/ui/toaster";
 import { usePersona } from "@/lib/persona-context";
 import { Card, CardContent } from "@/components/ui/card";
@@ -50,13 +51,15 @@ export default function App() {
         <Route path="/upload" element={<UploadPage />} />
         <Route path="/recent" element={<RecentPage />} />
         <Route path="/help" element={<HelpPage />} />
-        <Route path="/build-guide" element={<BuildGuidePage />} />
-        <Route path="/architecture" element={<ArchitecturePage />} />
-        <Route path="/security" element={<SecurityPage />} />
-        <Route path="/controls" element={<ControlsPage />} />
-        <Route path="/deployment" element={<DeploymentPage />} />
-        <Route path="/runbooks" element={<RunbooksPage />} />
-        <Route path="/source" element={<PlaceholderPage name="Source & IaC" />} />
+        {/* Internal documentation. Nav hides these for non-admins; RequireAdmin
+            is what actually blocks them — see the component for why both. */}
+        <Route path="/build-guide" element={<RequireAdmin><BuildGuidePage /></RequireAdmin>} />
+        <Route path="/architecture" element={<RequireAdmin><ArchitecturePage /></RequireAdmin>} />
+        <Route path="/security" element={<RequireAdmin><SecurityPage /></RequireAdmin>} />
+        <Route path="/controls" element={<RequireAdmin><ControlsPage /></RequireAdmin>} />
+        <Route path="/deployment" element={<RequireAdmin><DeploymentPage /></RequireAdmin>} />
+        <Route path="/runbooks" element={<RequireAdmin><RunbooksPage /></RequireAdmin>} />
+        <Route path="/source" element={<RequireAdmin><PlaceholderPage name="Source & IaC" /></RequireAdmin>} />
         <Route
           path="*"
           element={<PlaceholderPage name="Page not found" />}

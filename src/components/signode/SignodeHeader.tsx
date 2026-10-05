@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import { PersonaSwitcher } from "./PersonaSwitcher";
 import { SendInvitationDialog } from "./SendInvitationDialog";
 import { usePersona } from "@/lib/persona-context";
+import { useAuth, DEMO_MODE } from "@/lib/auth-context";
 
 type NavItem = {
   to: string;
@@ -27,7 +28,11 @@ const NAV_ITEMS: NavItem[] = [
 
 export function SignodeHeader() {
   const { persona } = usePersona();
-  const isGlobalAdmin = persona.id === "global-admin";
+  const { isAdmin, displayName, isAuthenticated } = useAuth();
+
+  // Demo mode is driven by the persona switcher; live mode by the signed-in
+  // user's Entra group membership.
+  const isGlobalAdmin = DEMO_MODE ? persona.id === "global-admin" : isAdmin;
 
   const visibleNav = NAV_ITEMS.filter(
     (item) => !item.adminOnly || isGlobalAdmin
@@ -45,8 +50,18 @@ export function SignodeHeader() {
             </span>
           </NavLink>
           <div className="flex items-center gap-3">
-            <SendInvitationDialog />
-            <PersonaSwitcher />
+            {/* Invitations are an admin action; the persona switcher is a demo
+                affordance and must never appear to a real scoped user. */}
+            {isGlobalAdmin && <SendInvitationDialog />}
+            {DEMO_MODE ? (
+              <PersonaSwitcher />
+            ) : (
+              isAuthenticated && (
+                <span className="text-sm text-white/90">
+                  Signed in as <strong>{displayName}</strong>
+                </span>
+              )
+            )}
           </div>
         </div>
         {/* Bottom row: nav */}

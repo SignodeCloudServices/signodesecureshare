@@ -15,7 +15,9 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Home", end: true },
   { to: "/browse", label: "Browse" },
   { to: "/upload", label: "Upload" },
-  { to: "/recent", label: "Recent" },
+  // Recent is hidden until the audit pipeline exists (RB-26). The page renders
+  // seeded activity, which would be the one screen contradicting the live data
+  // everywhere else. Route kept registered so restoring it is a one-line change.
   { to: "/help", label: "Help" },
   { to: "/build-guide", label: "Build Guide", adminOnly: true },
   { to: "/architecture", label: "Architecture", adminOnly: true },

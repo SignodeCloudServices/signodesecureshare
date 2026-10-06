@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { usePersona } from "@/lib/persona-context";
 import { canSendInvitations } from "@/lib/personas";
+import { useAuth, DEMO_MODE } from "@/lib/auth-context";
+import { FILE_RETENTION_DAYS } from "@/lib/retention";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -44,7 +46,104 @@ const RECENT_ACTIVITY = [
   },
 ];
 
+/**
+ * Live home page.
+ *
+ * Deliberately sparse. The demo version below shows upload counts, expiring
+ * file totals and a DLP status tile — all seeded values. Rendering those
+ * against a live portal would state things that are not true: the activity
+ * feed needs the Unified Audit Log (RB-26) and the DLP tile needs RB-18,
+ * neither of which is built. An empty slot is better than a confident
+ * fabrication.
+ */
+function LiveHomePage() {
+  const { displayName, scopedPaths, isAdmin, isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) return null;
+
+  const folderCount = scopedPaths.includes("*")
+    ? "All"
+    : scopedPaths.length.toString();
+
+  return (
+    <div className="mx-auto max-w-7xl px-6 py-8 space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-[hsl(var(--signode-black))]">
+          Welcome, {displayName}
+        </h1>
+        <p className="mt-2 text-muted-foreground">
+          {isAdmin
+            ? "Administrator access to every region, department and partner folder."
+            : "Browse and exchange files in the folders assigned to you."}
+        </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard
+          icon={<Folder className="h-5 w-5" />}
+          label="Folders in scope"
+          value={folderCount}
+        />
+        <StatCard
+          icon={<Clock className="h-5 w-5" />}
+          label="File retention"
+          value={`${FILE_RETENTION_DAYS} days`}
+          sub="then removed automatically"
+        />
+        <StatCard
+          icon={<ShieldCheck className="h-5 w-5" />}
+          label="Access level"
+          value={isAdmin ? "Administrator" : "Scoped"}
+          sub="from Entra group membership"
+        />
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold mb-3">Quick actions</h2>
+        <div className="grid gap-3 md:grid-cols-2">
+          <QuickAction
+            to="/browse"
+            icon={<Folder className="h-6 w-6" />}
+            title="Browse files"
+            description="Navigate the folders in your scope"
+          />
+          <QuickAction
+            to="/upload"
+            icon={<Upload className="h-6 w-6" />}
+            title="Upload files"
+            description={`Drag and drop, retained ${FILE_RETENTION_DAYS} days`}
+          />
+        </div>
+      </div>
+
+      {isAdmin && (
+        <Card className="border-[hsl(var(--signode-orange))]/40 bg-[hsl(var(--signode-orange))]/5">
+          <CardContent className="p-4 flex items-center justify-between gap-4">
+            <div>
+              <div className="font-semibold text-[hsl(var(--signode-black))]">
+                Need to share with someone new?
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Use the <strong>Send Invitation</strong> button in the top-right
+                to generate a scoped, expiring link.
+              </div>
+            </div>
+            <div className="text-[hsl(var(--signode-orange))]">
+              <ArrowRight className="h-6 w-6" />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 export function HomePage() {
+  if (!DEMO_MODE) return <LiveHomePage />;
+  return <DemoHomePage />;
+}
+
+function DemoHomePage() {
   const { persona } = usePersona();
   const canInvite = canSendInvitations(persona);
 
@@ -101,7 +200,7 @@ export function HomePage() {
             to="/upload"
             icon={<Upload className="h-6 w-6" />}
             title="Upload files"
-            description="Drag and drop with 7-day expiry"
+            description="Drag and drop files into your scope"
           />
           <QuickAction
             to="/recent"

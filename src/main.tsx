@@ -13,8 +13,6 @@ import "./index.css";
 const msalInstance = new PublicClientApplication(msalConfig);
 
  
-// TEMPORARY — remove before committing
-(window as any).msal = msalInstance;
 
 /**
  * MSAL v3 requires explicit initialisation before any other call, and it is

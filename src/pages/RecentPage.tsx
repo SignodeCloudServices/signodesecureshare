@@ -3,6 +3,7 @@ import * as d3 from "d3";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Upload as UploadIcon, Download } from "lucide-react";
+import { EXPIRY_CRITICAL_DAYS, expirySeverity } from "@/lib/retention";
 
 const DAYS = 14;
 
@@ -22,20 +23,25 @@ function generateSeries() {
 }
 
 const RECENT_UPLOADS = [
-  { name: "Q3-forecast-vendor-a.xlsx", path: "Home/AMER/Sales/Vendor-A", by: "amer-sales", size: "184 KB", when: "12 min ago", expiresInDays: 7 },
-  { name: "NDA-Bravo-2026.pdf", path: "Home/CORP/Legal/NDAs", by: "corp-legal", size: "412 KB", when: "1 hr ago", expiresInDays: 7 },
-  { name: "campaign-brief-Q4.pptx", path: "Home/AMER/Marketing/Campaigns", by: "amer-sales", size: "2.1 MB", when: "yesterday", expiresInDays: 6 },
-  { name: "audit-notes-Q3.txt", path: "Home/CORP/Compliance/Audits", by: "global-admin", size: "22 KB", when: "2 days ago", expiresInDays: 5 },
-  { name: "RFQ-EMEA-2026-01.docx", path: "Home/EMEA/Procurement/RFQs", by: "global-admin", size: "76 KB", when: "3 days ago", expiresInDays: 4 },
-  { name: "phoenix-scope-v2.pdf", path: "Home/CORP/Projects/Phoenix", by: "global-admin", size: "890 KB", when: "5 days ago", expiresInDays: 2 },
+  { name: "Q3-forecast-vendor-a.xlsx", path: "Home/AMER/Sales/Vendor-A", by: "amer-sales", size: "184 KB", when: "12 min ago", expiresInDays: 90 },
+  { name: "NDA-Bravo-2026.pdf", path: "Home/CORP/Legal/NDAs", by: "corp-legal", size: "412 KB", when: "1 hr ago", expiresInDays: 90 },
+  { name: "campaign-brief-Q4.pptx", path: "Home/AMER/Marketing/Campaigns", by: "amer-sales", size: "2.1 MB", when: "yesterday", expiresInDays: 89 },
+  { name: "audit-notes-Q3.txt", path: "Home/CORP/Compliance/Audits", by: "global-admin", size: "22 KB", when: "2 days ago", expiresInDays: 88 },
+  { name: "RFQ-EMEA-2026-01.docx", path: "Home/EMEA/Procurement/RFQs", by: "global-admin", size: "76 KB", when: "3 days ago", expiresInDays: 15 },
+  { name: "phoenix-scope-v2.pdf", path: "Home/CORP/Projects/Phoenix", by: "global-admin", size: "890 KB", when: "5 days ago", expiresInDays: 4 },
 ];
 
 function expiryBadge(days: number) {
-  if (days <= 2)
-    return <Badge className="bg-red-100 text-red-800 border-red-200">Expires in {days}d</Badge>;
-  if (days <= 4)
-    return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Expires in {days}d</Badge>;
-  return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">Expires in {days}d</Badge>;
+  switch (expirySeverity(days)) {
+    case "expired":
+      return <Badge className="bg-red-100 text-red-800 border-red-200">Expired</Badge>;
+    case "critical":
+      return <Badge className="bg-red-100 text-red-800 border-red-200">Expires in {days}d</Badge>;
+    case "warning":
+      return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Expires in {days}d</Badge>;
+    default:
+      return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">Expires in {days}d</Badge>;
+  }
 }
 
 function ActivityChart({ data }: { data: { date: Date; uploads: number; downloads: number }[] }) {
@@ -174,11 +180,11 @@ export function RecentPage() {
             <div className="flex items-center gap-2 text-red-600">
               <FileText className="h-5 w-5" />
               <span className="text-xs uppercase tracking-wider text-muted-foreground">
-                Expiring &lt; 48h
+                Expiring &le; {EXPIRY_CRITICAL_DAYS}d
               </span>
             </div>
             <div className="mt-2 text-2xl font-bold">
-              {RECENT_UPLOADS.filter((r) => r.expiresInDays <= 2).length}
+              {RECENT_UPLOADS.filter((r) => r.expiresInDays <= EXPIRY_CRITICAL_DAYS).length}
             </div>
           </CardContent>
         </Card>

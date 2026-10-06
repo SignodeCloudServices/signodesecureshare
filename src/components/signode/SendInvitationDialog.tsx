@@ -2,6 +2,10 @@ import * as React from "react";
 import { usePersona } from "@/lib/persona-context";
 import { canSendInvitations } from "@/lib/personas";
 import {
+  INVITATION_DEFAULT_DAYS,
+  INVITATION_MAX_DAYS,
+} from "@/lib/retention";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -32,7 +36,7 @@ export function SendInvitationDialog() {
   const [open, setOpen] = React.useState(false);
   const [email, setEmail] = React.useState("");
   const [folder, setFolder] = React.useState("");
-  const [expires, setExpires] = React.useState("7");
+  const [expires, setExpires] = React.useState(String(INVITATION_DEFAULT_DAYS));
   const [note, setNote] = React.useState("");
   const [sentLink, setSentLink] = React.useState<string | null>(null);
   const [copied, setCopied] = React.useState(false);
@@ -158,7 +162,7 @@ export function SendInvitationDialog() {
                   id="invite-expires"
                   type="number"
                   min={1}
-                  max={30}
+                  max={INVITATION_MAX_DAYS}
                   value={expires}
                   onChange={(e) => setExpires(e.target.value)}
                 />

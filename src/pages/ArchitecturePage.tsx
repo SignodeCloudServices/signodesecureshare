@@ -122,7 +122,7 @@ export function ArchitecturePage() {
             <FlowStep
               n={5}
               title="SharePoint write"
-              body="Function uses its managed identity + delegated Graph token to write the file to the target SharePoint library. Sensitivity label is auto-applied. Expiry metadata is set (default 7 days)."
+              body="Function uses its managed identity + delegated Graph token to write the file to the target SharePoint library. Sensitivity label is auto-applied. The Extranet-AutoCleanup-90d retention label governs cleanup after 90 days."
             />
             <FlowStep
               n={6}

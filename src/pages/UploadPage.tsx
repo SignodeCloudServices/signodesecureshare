@@ -4,6 +4,7 @@ import { useAuth, DEMO_MODE } from "@/lib/auth-context";
 import { LiveUpload } from "./LiveUpload";
 import { isPathInScope } from "@/lib/personas";
 import { flattenTree, FOLDER_TREE } from "@/lib/folderTree";
+import { FILE_RETENTION_DAYS } from "@/lib/retention";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -146,7 +147,8 @@ function UploadPageInner() {
           Upload
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Drag and drop files below. Uploads expire after 7 days by default.
+          Drag and drop files below. Uploads are retained for{" "}
+          {FILE_RETENTION_DAYS} days, then removed automatically.
         </p>
       </div>
 
@@ -235,7 +237,8 @@ function UploadPageInner() {
                       {humanSize(f.size)} &middot;{" "}
                       {f.status === "queued" && "Queued"}
                       {f.status === "uploading" && `Uploading ${f.progress}%`}
-                      {f.status === "done" && "Uploaded — expires in 7d"}
+                      {f.status === "done" &&
+                        `Uploaded — retained ${FILE_RETENTION_DAYS}d`}
                     </div>
                   </div>
                   {f.status === "done" ? (

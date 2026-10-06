@@ -4,7 +4,7 @@ import { Mail, Globe, HelpCircle, ShieldCheck, Upload, KeyRound } from "lucide-r
 const FAQS = [
   {
     q: "How long do uploaded files remain accessible?",
-    a: "Files uploaded through SecureShare expire 7 days after upload by default. Look for the color-coded expiry badge next to each file — green (fresh), amber (expiring soon), red (expiring in <48 hours).",
+    a: "Files uploaded through SecureShare are retained for 90 days, then removed automatically. Look for the color-coded expiry badge next to each file — green (fresh), amber (three weeks or less remaining), red (one week or less). Note this is separate from invitation link expiry, which is 7 days by default.",
   },
   {
     q: "Why can't I see a folder I know exists?",

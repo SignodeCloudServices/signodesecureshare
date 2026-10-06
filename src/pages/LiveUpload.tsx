@@ -37,16 +37,9 @@ import {
   Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { FILE_RETENTION_DAYS } from "@/lib/retention";
 
-/**
- * Ratified retention period (RB-16).
- *
- * NOTE: src/lib/retention.ts was prepared in an earlier session but never
- * committed, so this is inlined. Several pages still say "expire after 7
- * days", which contradicts the ratified 90-day decision - worth fixing
- * together rather than piecemeal.
- */
-const FILE_RETENTION_DAYS = 90;
+
 
 type QueuedFile = {
   id: string;

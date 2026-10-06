@@ -5,6 +5,7 @@ import { useAuth, DEMO_MODE } from "@/lib/auth-context";
 import { LiveScopedBrowser } from "./LiveScopedBrowser";
 import { isPathInScope } from "@/lib/personas";
 import { FOLDER_TREE, findNode, type FolderNode } from "@/lib/folderTree";
+import { FILE_RETENTION_DAYS, expirySeverity } from "@/lib/retention";
 import { AccessRestricted } from "@/components/signode/AccessRestricted";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,22 +36,33 @@ function mockFilesFor(path: string) {
   ];
   const seed = path.length;
   const count = (seed % 4) + 1;
-  return Array.from({ length: count }, (_, i) => ({
-    name: names[(seed + i) % names.length],
-    size: `${((seed + i * 37) % 900) + 20} KB`,
-    uploaded: `${((seed + i * 3) % 6) + 1} days ago`,
-    expiresInDays: 7 - (((seed + i * 3) % 6) + 1),
-  }));
+  return Array.from({ length: count }, (_, i) => {
+    // Spread mock ages across the retention window so every badge colour is
+    // exercised, rather than clustering in the final few days.
+    const ageDays = ((seed + i * 13) % 85) + 1;
+    return {
+      name: names[(seed + i) % names.length],
+      size: `${((seed + i * 37) % 900) + 20} KB`,
+      uploaded: ageDays === 1 ? "yesterday" : `${ageDays} days ago`,
+      expiresInDays: FILE_RETENTION_DAYS - ageDays,
+    };
+  });
 }
 
+// Thresholds come from the retention module. They were previously tuned to a
+// 7-day window (critical at 2 days, warning at 4), which is meaningless
+// against the ratified 90-day retention period.
 function expiryBadge(days: number) {
-  if (days <= 0)
-    return <Badge className="bg-red-100 text-red-800 border-red-200">Expired</Badge>;
-  if (days <= 2)
-    return <Badge className="bg-red-100 text-red-800 border-red-200">Expires in {days}d</Badge>;
-  if (days <= 4)
-    return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Expires in {days}d</Badge>;
-  return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">Expires in {days}d</Badge>;
+  switch (expirySeverity(days)) {
+    case "expired":
+      return <Badge className="bg-red-100 text-red-800 border-red-200">Expired</Badge>;
+    case "critical":
+      return <Badge className="bg-red-100 text-red-800 border-red-200">Expires in {days}d</Badge>;
+    case "warning":
+      return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Expires in {days}d</Badge>;
+    default:
+      return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">Expires in {days}d</Badge>;
+  }
 }
 
 // ---------------------------------------------------------------------------

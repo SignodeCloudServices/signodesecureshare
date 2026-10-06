@@ -365,23 +365,26 @@ function FolderDetail({
 export function BrowsePage() {
   const { isAdmin, isAuthenticated } = useAuth();
 
+  // Live mode always uses the Graph-backed browser. The tree navigator below
+  // reads the static folderTree.ts and is demo-mode only — rendering it for an
+  // admin would show mock folders beside real ones.
   if (!DEMO_MODE) {
     if (!isAuthenticated) return null;
-    if (!isAdmin) {
-      return (
-        <div className="mx-auto max-w-5xl px-6 py-10">
-          <h1 className="text-3xl font-bold text-[hsl(var(--signode-black))]">
-            Browse
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            Files shared with you.
-          </p>
-          <div className="mt-6">
-            <LiveScopedBrowser />
-          </div>
+    return (
+      <div className="mx-auto max-w-5xl px-6 py-10">
+        <h1 className="text-3xl font-bold text-[hsl(var(--signode-black))]">
+          Browse
+        </h1>
+        <p className="mt-2 text-muted-foreground">
+          {isAdmin
+            ? "Administrator view of the Signode folder tree."
+            : "Files shared with you."}
+        </p>
+        <div className="mt-6">
+          <LiveScopedBrowser />
         </div>
-      );
-    }
+      </div>
+    );
   }
 
   return <BrowsePageInner />;

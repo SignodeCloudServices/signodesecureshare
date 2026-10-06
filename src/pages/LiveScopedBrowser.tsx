@@ -48,7 +48,12 @@ export function LiveScopedBrowser() {
   const { account, scopedPaths, isLoading: authLoading } = useAuth();
 
   // The user's own folder. Everything below is relative to this.
-  const rootPath = scopedPaths[0] ?? "";
+  //
+  // An admin resolves to "*", which is not a path — root them at the library
+  // top instead so they browse the real tree rather than a static mock.
+  const rootPath = scopedPaths.includes("*")
+    ? "FileRoot"
+    : (scopedPaths[0] ?? "");
 
   const [path, setPath] = React.useState<string>(rootPath);
   const [items, setItems] = React.useState<DriveItem[]>([]);
@@ -108,7 +113,8 @@ export function LiveScopedBrowser() {
     ? path.slice(rootPath.length).split("/").filter(Boolean)
     : [];
 
-  const rootLabel = rootPath.split("/").pop() ?? "Your folder";
+  const rootLabel =
+    rootPath === "FileRoot" ? "All folders" : (rootPath.split("/").pop() ?? "Your folder");
   const canGoUp = relativeParts.length > 0;
 
   if (authLoading) {

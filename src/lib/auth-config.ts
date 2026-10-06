@@ -72,7 +72,11 @@ export const msalConfig: Configuration = {
  * ACLs. A user who cannot see a folder gets nothing back for it.
  */
 export const loginRequest: PopupRequest = {
-scopes: [
+  // Always show the account picker rather than silently reusing whichever
+  // account is cached. Without this, switching between an admin and a scoped
+  // user means clearing site data between sign-ins.
+  prompt: "select_account",
+  scopes: [
   "User.Read",
   "Sites.Read.All",
   "Files.ReadWrite.All",

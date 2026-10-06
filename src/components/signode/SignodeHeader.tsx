@@ -28,7 +28,7 @@ const NAV_ITEMS: NavItem[] = [
 
 export function SignodeHeader() {
   const { persona } = usePersona();
-  const { isAdmin, displayName, isAuthenticated } = useAuth();
+  const { isAdmin, displayName, isAuthenticated, signOut } = useAuth();
 
   // Demo mode is driven by the persona switcher; live mode by the signed-in
   // user's Entra group membership.
@@ -57,9 +57,22 @@ export function SignodeHeader() {
               <PersonaSwitcher />
             ) : (
               isAuthenticated && (
-                <span className="text-sm text-white/90">
-                  Signed in as <strong>{displayName}</strong>
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-white/90">
+                    Signed in as <strong>{displayName}</strong>
+                    {isAdmin && (
+                      <span className="ml-2 rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                        Admin
+                      </span>
+                    )}
+                  </span>
+                  <button
+                    onClick={() => void signOut()}
+                    className="text-sm text-white/70 underline underline-offset-2 hover:text-white"
+                  >
+                    Sign out
+                  </button>
+                </div>
               )
             )}
           </div>

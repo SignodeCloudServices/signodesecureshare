@@ -41,8 +41,8 @@ export type AuthState = {
   scopedPaths: string[];
   isAdmin: boolean;
   account: AccountInfo | null;
-  signIn: () => void;
-  signOut: () => void;
+  signIn: () => Promise<void>;
+  signOut: () => Promise<void>;
 };
 
 const AuthContext = React.createContext<AuthState | undefined>(undefined);
@@ -120,11 +120,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     scopedPaths,
     isAdmin,
     account,
-    signIn: () => {
-      instance.loginPopup(loginRequest).catch((e) => setError(String(e)));
+    signIn: async () => {
+      setError(null);
+      try {
+        const result = await instance.loginPopup(loginRequest);
+        if (result.account) instance.setActiveAccount(result.account);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        // user_cancelled is the person closing the popup, not a failure worth
+        // showing them an error block for.
+        if (!/user_cancelled|popup_window_error/i.test(msg)) setError(msg);
+      }
     },
-    signOut: () => {
-      instance.logoutPopup().catch((e) => setError(String(e)));
+    signOut: async () => {
+      setError(null);
+      try {
+        // Clear local state too — logoutPopup alone can leave a stale account
+        // in the cache, which defeats switching between demo accounts.
+        await instance.logoutPopup({ account: account ?? undefined });
+        setGroupIds([]);
+        setDisplayName("");
+        setUserPrincipalName("");
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (!/user_cancelled/i.test(msg)) setError(msg);
+      }
     },
   };
 

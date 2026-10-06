@@ -63,7 +63,7 @@ export const NIST_CONTROLS: NistControl[] = [
   // IA
   { id: "IA-2", family: "IA — Identification & Authentication", title: "Identification & Authentication (Users)", baseline: "Moderate", status: "Implemented", owner: "IAM Team", evidence: "Entra CA + phishing-resistant MFA" },
   { id: "IA-5", family: "IA — Identification & Authentication", title: "Authenticator Management", baseline: "Moderate", status: "Implemented", owner: "IAM Team", evidence: "FIDO2 + Authenticator w/ number match" },
-  { id: "IA-8", family: "IA — Identification & Authentication", title: "Identification & Authentication (Non-Org Users)", baseline: "Moderate", status: "Implemented", owner: "IAM Team", evidence: "Entra External ID CIAM tenant" },
+  { id: "IA-8", family: "IA — Identification & Authentication", title: "Identification & Authentication (Non-Org Users)", baseline: "Moderate", status: "Implemented", owner: "IAM Team", evidence: "Entra B2B guests + guest-scoped CA" },
 
   // IR
   { id: "IR-4", family: "IR — Incident Response", title: "Incident Handling", baseline: "Moderate", status: "Implemented", owner: "SOC", evidence: "IR runbook + PagerDuty rotation" },

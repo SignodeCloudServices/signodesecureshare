@@ -30,7 +30,7 @@ const STEPS = [
     n: 1,
     title: "Foundational tenant & subscription setup",
     detail:
-      "Create the dedicated Azure subscription for SecureShare under the Signode enterprise agreement. Establish management groups, tag policy, cost center. Verify Entra ID + Entra External ID tenants are provisioned.",
+      "Create the dedicated Azure subscription for SecureShare under the Signode enterprise agreement. Establish management groups, tag policy, cost center. Verify the Signode Entra ID tenant and its B2B external collaboration settings.",
   },
   {
     n: 2,
@@ -48,7 +48,7 @@ const STEPS = [
     n: 4,
     title: "Identity & Conditional Access",
     detail:
-      "Configure the External ID CIAM tenant, user flows for MFA (FIDO2 + Authenticator), Conditional Access policies, and Entra security groups mapped to the six personas.",
+      "Configure B2B external collaboration settings and guest invitation restrictions, Conditional Access policies for guests (MFA required, legacy authentication blocked), and the Entra security groups that map one-to-one onto shared folders.",
   },
   {
     n: 5,
@@ -388,7 +388,8 @@ export function DeploymentPage() {
             <code>secureshare.pkgconnect.com</code>, backed by a{" "}
             <strong>.NET 8 Azure Function API</strong> that brokers all storage
             operations to a dedicated <strong>SharePoint Online</strong> site.
-            Identity is handled by <strong>Entra External ID</strong>; DLP by{" "}
+            Identity is handled by <strong>Entra ID</strong>, with external
+            partners invited as <strong>B2B guests</strong>; DLP by{" "}
             <strong>Microsoft Purview</strong>.
           </p>
           <p>

@@ -305,7 +305,7 @@ const RUNBOOKS: Runbook[] = [
       {
         title: "Auto-provision the guest account",
         detail:
-          "Function API creates the guest account in the External ID CIAM tenant and assigns to the scoped Entra security group.",
+          "Function API invites the B2B guest into the Signode corporate tenant and adds them to the scoped Entra security group.",
       },
       {
         title: "Vendor accepts",
@@ -355,7 +355,7 @@ const RUNBOOKS: Runbook[] = [
       {
         title: "Suspend sign-in",
         detail:
-          "Disable the guest account in Entra External ID. Any active sessions are terminated on next token refresh.",
+          "Disable the B2B guest account in Entra ID. Any active sessions are terminated on next token refresh.",
       },
       {
         title: "Revoke scoped access",

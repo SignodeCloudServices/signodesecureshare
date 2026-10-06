@@ -28,7 +28,7 @@ bun.lockb
 
 const README = `# Signode SecureShare Portal
 
-Internal-facing file exchange portal for Signode. React SPA + .NET 8 Function API + SharePoint Online + Entra External ID + Purview DLP.
+Internet-facing file exchange portal for Signode. React SPA + .NET 8 Function API + SharePoint Online + Entra ID (external partners as B2B guests) + Purview DLP.
 
 ## Prerequisites
 - Node.js 20+ and Bun 1.3+

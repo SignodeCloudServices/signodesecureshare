@@ -37,10 +37,11 @@ export function ArchitecturePage() {
             for structured collaboration with third parties. The frontend is a
             React SPA hosted on Azure Static Web Apps. It calls a .NET 8 Azure
             Function API which brokers all storage operations to a dedicated
-            SharePoint Online site collection. Identity is federated through
-            Microsoft Entra External ID for CIAM (customers/vendors) and internal
-            Entra ID for Signode staff. Data protection is enforced by Microsoft
-            Purview sensitivity labels and DLP policies.
+            SharePoint Online site collection. External users are invited as
+            Entra B2B guests in the Signode corporate tenant, alongside internal
+            staff accounts — one directory, one permission surface. Data
+            protection is enforced by Microsoft Purview sensitivity labels and
+            DLP policies.
           </p>
           <p>
             Every request is authenticated with phishing-resistant MFA (FIDO2 or
@@ -70,8 +71,8 @@ export function ArchitecturePage() {
             />
             <ComponentTile
               icon={<Users className="h-5 w-5" />}
-              title="Entra External ID (CIAM)"
-              detail="External vendor identities live in a separate CIAM tenant. Custom user flows enforce MFA (FIDO2 or Authenticator + number match), acceptable use acceptance, and just-in-time provisioning."
+              title="Entra B2B Guest Identities"
+              detail="External vendor identities are invited as B2B guests into the Signode corporate tenant, not a separate directory. Existing guest-scoped Conditional Access (MFA required, legacy authentication blocked) applies automatically, and guests can be granted permissions directly on SharePoint Online."
             />
             <ComponentTile
               icon={<Database className="h-5 w-5" />}
@@ -102,7 +103,7 @@ export function ArchitecturePage() {
             <FlowStep
               n={1}
               title="User authenticates"
-              body="User hits secureshare.pkgconnect.com. Static Web App redirects to Entra External ID (external vendors) or Signode Entra ID (internal). Conditional Access requires FIDO2 or Authenticator MFA on every session start."
+              body="User hits secureshare.pkgconnect.com and is redirected to Signode Entra ID — internal staff with their corporate account, external partners with their B2B guest account in the same tenant. Conditional Access requires FIDO2 or Authenticator MFA on every session start."
             />
             <FlowStep
               n={2}
@@ -158,7 +159,7 @@ export function ArchitecturePage() {
             items={[
               "Entra Conditional Access requires phishing-resistant MFA (FIDO2 or Authenticator + number matching) for all users.",
               "Privileged access is time-bound via Entra PIM with approval workflow and Just-in-Time elevation.",
-              "External identities use a separate CIAM tenant with lifecycle policies (auto-disable after 90 days of inactivity).",
+              "External identities are B2B guests in the Signode corporate tenant, so existing guest-scoped Conditional Access (MFA required, legacy authentication blocked) applies to them automatically.",
               "Break-glass accounts stored in a physical safe; usage triggers Sentinel high-severity alert.",
             ]}
           />

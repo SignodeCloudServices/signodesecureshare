@@ -18,6 +18,7 @@ import {
   uploadFile,
   SIMPLE_UPLOAD_LIMIT,
 } from "@/lib/graph";
+import { rootScopePaths, scopeLabel } from "@/lib/folder-scopes";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,16 +55,6 @@ function humanSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/** Show the destination relative to the user's own root, not the full path. */
-function relativeLabel(path: string, rootPath: string): string {
-  if (path === rootPath) return path.split("/").pop() ?? path;
-  if (path.startsWith(rootPath + "/")) {
-    const rootName = rootPath.split("/").pop() ?? "";
-    return `${rootName}/${path.slice(rootPath.length + 1)}`;
-  }
-  return path;
-}
-
 export function LiveUpload() {
   const { instance } = useMsal();
   const { account, scopedPaths, isAdmin, isLoading: authLoading } = useAuth();
@@ -75,8 +66,6 @@ export function LiveUpload() {
   const [isDragging, setIsDragging] = React.useState(false);
   const [loadingDests, setLoadingDests] = React.useState(false);
 
-  const rootPath = scopedPaths[0] ?? "";
-
   // Build the destination list from the user's scope only.
   React.useEffect(() => {
     if (!account || scopedPaths.length === 0) return;
@@ -86,7 +75,11 @@ export function LiveUpload() {
     setLoadingDests(true);
 
     (async () => {
-      const roots = scopedPaths.includes("*") ? [] : scopedPaths;
+      // Collapse nested grants first. Walking both a region and a department
+      // inside it would list every folder under that department twice.
+      const roots = scopedPaths.includes("*")
+        ? []
+        : rootScopePaths(scopedPaths);
       const all: string[] = [];
       for (const root of roots) {
         const paths = await listFolderPaths(instance, account, root);
@@ -181,7 +174,7 @@ export function LiveUpload() {
             <SelectContent>
               {destinations.map((p) => (
                 <SelectItem key={p} value={p}>
-                  {relativeLabel(p, rootPath)}
+                  {scopeLabel(p)}
                 </SelectItem>
               ))}
             </SelectContent>

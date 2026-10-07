@@ -413,6 +413,49 @@ export function isGuestEligibleScope(groupId: string): boolean {
 export function guestEligibleScopes(): FolderScope[] {
  return ALL_SCOPES.filter((s) => s.guestEligible);
 }
+
+/**
+ * Human label for a portal path: "AMER / Engineering", "CORP (all departments)".
+ *
+ * Derived from the path rather than `groupName` on purpose, so it also labels
+ * paths *below* a registered scope ("AMER / Engineering / Drawings") — the
+ * upload destination list needs that. The region segment carries a SharePoint
+ * sort prefix (`01_Signode_AMER`) that means nothing to a user, so it is
+ * stripped, and underscores become spaces.
+ */
+export function scopeLabel(portalPath: string): string {
+ const segments = toGraphPath(portalPath).split("/").filter(Boolean);
+ if (segments.length === 0) return "All folders";
+ const label = segments
+  .map((s, i) => (i === 0 ? s.replace(/^\d+_Signode_/, "") : s))
+  .map((s) => s.replace(/_/g, " "))
+  .join(" / ");
+ // A region grant cascades to every department beneath it; say so, or the
+ // single-word label reads as one folder rather than the whole region.
+ return scopeByPath(portalPath)?.level === "region"
+  ? `${label} (all departments)`
+  : label;
+}
+
+/**
+ * Reduce granted paths to the set of distinct roots worth offering.
+ *
+ * `pathsForGroups` returns one path per group, so a user in both a region
+ * group and a department group inside that region gets both. The region grant
+ * already cascades, so the department path is redundant — offering both would
+ * be two doors into the same room, and the narrower one would look like a
+ * different place.
+ *
+ * Returns paths sorted for stable ordering in a picker.
+ */
+export function rootScopePaths(paths: string[]): string[] {
+ const unique = [...new Set(paths)];
+ return unique
+  .filter(
+   (p) => !unique.some((other) => other !== p && p.startsWith(`${other}/`))
+  )
+  .sort((a, b) => a.localeCompare(b));
+}
 // ---------------------------------------------------------------------------
 // Structural guard — module load time, fails loudly.
 //

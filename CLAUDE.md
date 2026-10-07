@@ -238,6 +238,14 @@ presentation.
   the build. Expect roughly 850 kB.
 - `npm ci`, not `npm install`. The lockfile is `package-lock.json`; bun is not used.
 - Keep demo mode working behind `VITE_DEMO_MODE`.
+- **A user can hold several unrelated grants.** `scopedPaths` is a list, not a path.
+  Never index it — `LiveScopedBrowser` and `LiveUpload` both did (`scopedPaths[0]`), which
+  silently made every scope past the first unreachable for anyone in two groups, and
+  labelled the rest with their raw `FileRoot/...` path. Collapse nested grants with
+  `rootScopePaths()` and label with `scopeLabel()`, both in `folder-scopes.ts`. Unrelated
+  grants are not one tree and have no ancestor the user may see, so they cannot be
+  browsed as one: `LiveScopedBrowser` shows a Department picker when there is more than
+  one root, and nothing at all when there is one.
 - Prefer `useMemo` for derived collections used as effect dependencies.
 - Avoid `any`. `Persona`, `FolderScope` and `DriveItem` are exported; use them.
 - Signode house style: charcoal `#231F20`, shield red / burnt orange `#B43D27`, white.

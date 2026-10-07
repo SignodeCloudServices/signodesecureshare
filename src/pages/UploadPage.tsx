@@ -202,7 +202,8 @@ function UploadPageInner() {
           Drop files here, or click to browse
         </div>
         <div className="mt-1 text-sm text-muted-foreground">
-          Files are DLP-scanned before landing in the destination folder.
+          Files are scanned by security software before landing in the
+          destination folder.
         </div>
       </label>
 

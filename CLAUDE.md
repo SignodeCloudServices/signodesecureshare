@@ -183,6 +183,14 @@ presentation.
   static and still ships in the bundle to every visitor. The real fix is not shipping
   internal runbooks inside an internet-facing portal — consider an env flag or a separate
   build.
+  **This is now the largest open disclosure gap.** Scrubbing product names from the
+  user-facing copy (7 Oct) does not touch the bundle: `ArchitecturePage`,
+  `SecurityPage`, `ControlsPage`, `DeploymentPage` and `RunbooksPage` still name
+  Purview, Sentinel, Entra PIM, the NIST control inventory with per-control
+  implementation status, and the break-glass procedure. All of it is readable from
+  `view-source` by any anonymous visitor, without signing in. The AUP line was one
+  sentence; this is the architecture. Raise it with the security team alongside the
+  AUP change.
 - `BrowsePage` deep links are broken in demo mode: `?path=` is read into initial state,
   then the `[persona.id]` effect overwrites it on mount.
 - No error boundary. A render error anywhere blanks the page.
@@ -196,9 +204,9 @@ presentation.
 - `folderTree.ts` is seeded demo data whose shape no longer matches SharePoint. Only
   reachable via `VITE_DEMO_MODE`. Either refresh it from the live tree or delete it once
   demo mode is retired.
-- The AUP modal states that uploads are scanned by Purview DLP and all activity is
-  logged. Neither is built (RB-18, RB-26). Known and deliberate — positioned as the
-  designed end state.
+- The AUP modal states that uploads are scanned by security software and that all
+  activity is logged. Neither is built (RB-18, RB-26). Known and deliberate —
+  positioned as the designed end state.
 
 **Hygiene**
 - `npm run lint` fails — the script calls `eslint .` but eslint is not a dependency and
@@ -222,10 +230,6 @@ presentation.
 - Private endpoints exist but are unused: no VNet integration on the Function App, and
   public network access is enabled on Storage and Key Vault (RB-07/RB-08, reopened).
 
-**Stale documentation inside the app** — `ArchitecturePage.tsx`, `DeploymentPage.tsx` and
-`RunbooksPage.tsx` still reference Entra External ID / CIAM in places. Wrong per decision
-3; correct as encountered.
-
 ---
 
 ## Conventions
@@ -237,7 +241,16 @@ presentation.
 - Prefer `useMemo` for derived collections used as effect dependencies.
 - Avoid `any`. `Persona`, `FolderScope` and `DriveItem` are exported; use them.
 - Signode house style: charcoal `#231F20`, shield red / burnt orange `#B43D27`, white.
-- Contact address used throughout the UI: `itservicecenter@signode.com`.
+- **No support mailbox is advertised in the UI.** Use the wording "your internal
+  Signode Support Contact". `itservicecenter@signode.com` was removed on 7 Oct 2026:
+  inbound mail security blocks most external senders to it, so publishing it to
+  partners produced a dead end. Do not reintroduce it or any other address until the
+  dedicated SecureShare inbox exists; then update it in one place per surface.
+- **Do not name internal security products in user-facing copy.** Flagged by the
+  security team on 7 Oct 2026. Describe the control, not the vendor — "scanned by
+  security software", not "Purview DLP". This applies to the AUP, `HelpPage`, and the
+  upload surfaces. The admin documentation pages still name the real stack, which is
+  correct for internal docs but see the bundle caveat under Known gaps.
 - Comments should explain *why*, especially where a decision looks arbitrary — which
   library, which threshold, which of two similar-sounding permissions.
 

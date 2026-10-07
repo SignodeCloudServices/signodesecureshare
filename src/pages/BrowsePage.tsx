@@ -439,9 +439,8 @@ function BrowsePageInner() {
             Browse
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Your assigned workspace. Contact{" "}
-            <span className="font-mono">itservicecenter@signode.com</span> if
-            you need access to a different folder.
+            Your assigned workspace. Contact your internal Signode Support
+            Contact if you need access to a different folder.
           </p>
         </div>
 

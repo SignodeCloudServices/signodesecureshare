@@ -132,8 +132,8 @@ export function LiveScopedBrowser() {
           <AlertCircle className="mx-auto h-8 w-8 text-[hsl(var(--signode-orange))]" />
           <h2 className="mt-3 text-lg font-semibold">No folders assigned</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Your account has no SecureShare folders assigned yet. Contact{" "}
-            <code>itservicecenter@signode.com</code> to request access.
+            Your account has no SecureShare folders assigned yet. Contact your
+            internal Signode Support Contact to request access.
           </p>
         </CardContent>
       </Card>

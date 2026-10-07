@@ -33,8 +33,7 @@ export function AccessRestricted({ attemptedPath }: Props) {
             <div className="font-mono text-sm break-all">{attemptedPath}</div>
           </div>
           <div className="text-xs text-muted-foreground pt-2 border-t">
-            Need access? Contact{" "}
-            <span className="font-mono">itservicecenter@signode.com</span>
+            Need access? Contact your internal Signode Support Contact.
           </div>
         </CardContent>
       </Card>

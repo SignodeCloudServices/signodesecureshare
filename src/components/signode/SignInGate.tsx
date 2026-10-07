@@ -42,19 +42,21 @@ const AUP_TEXT = (
       By using the Signode SecureShare Portal you agree to exchange files only
       for legitimate Signode business purposes.
     </p>
-    <p>
-      Uploads are scanned by Microsoft Purview DLP. Files containing sensitive
-      information may be quarantined and reviewed.
-    </p>
+    {/* Deliberately generic. Naming the specific scanning product tells an
+        external reader which internal security tooling Signode runs; the
+        security team flagged this on 7 Oct. Describe the control, not the
+        vendor. */}
+    <p>File uploads are subject to scanning by security software.</p>
     <p>
       Access is limited to the folders assigned to your role. All activity is
       logged for audit purposes. Sharing your credentials or invitation links
       with unauthorized parties is prohibited.
     </p>
-    <p>
-      Questions? Contact{" "}
-      <span className="font-mono">itservicecenter@signode.com</span>.
-    </p>
+    {/* No mailbox advertised here on purpose. The shared IT Service Center
+        address was removed 7 Oct: inbound mail security blocks most external
+        senders to it, so publishing it to partners produced a dead end. A
+        dedicated SecureShare inbox replaces this text when it exists. */}
+    <p>Questions? Contact your internal Signode Support Contact.</p>
   </>
 );
 

@@ -689,8 +689,8 @@ export function RunbooksPage() {
             Engineering. Every runbook is drilled at least once per year via
             tabletop or live exercise. Changes flow through pull requests
             against the source repo; the current version is always what's
-            rendered here. Questions:{" "}
-            <span className="font-mono">itservicecenter@signode.com</span>.
+            rendered here. Questions go to Platform Engineering via the
+            internal support channel.
           </p>
         </CardContent>
       </Card>

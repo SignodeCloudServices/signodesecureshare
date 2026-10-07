@@ -16,7 +16,7 @@ const FAQS = [
   },
   {
     q: "What file types are blocked?",
-    a: "Executables (.exe, .bat, .ps1, .msi), archives with encrypted payloads, and files that trigger Purview DLP policies (e.g., unlabeled files containing PII or PCI data) are blocked at upload.",
+    a: "Executables (.exe, .bat, .ps1, .msi), archives with encrypted payloads, and files that trigger upload scanning policies (e.g., unlabeled files containing PII or PCI data) are blocked at upload.",
   },
   {
     q: "How is my sign-in secured?",
@@ -24,7 +24,7 @@ const FAQS = [
   },
   {
     q: "Where are my files actually stored?",
-    a: "Files are stored in a Signode-owned SharePoint Online site with sensitivity labels applied automatically by Microsoft Purview. Encryption at rest and in transit is enforced end-to-end.",
+    a: "Files are stored in a Signode-owned SharePoint Online site with data classification and protection controls applied automatically. Encryption at rest and in transit is enforced end-to-end.",
   },
 ];
 
@@ -50,16 +50,14 @@ export function HelpPage() {
             </div>
             <div className="min-w-0">
               <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                Support email
+                Support contact
               </div>
-              <a
-                href="mailto:itservicecenter@signode.com"
-                className="font-mono text-sm text-[hsl(var(--signode-black))] hover:text-[hsl(var(--signode-orange))] break-all"
-              >
-                itservicecenter@signode.com
-              </a>
-              <div className="text-xs text-muted-foreground mt-1">
-                24/5 response, 4-business-hour SLA
+              {/* No address and no SLA until the dedicated SecureShare inbox
+                  exists. The previous 24/5 / 4-business-hour commitment was
+                  the IT Service Center's; it cannot be promised on behalf of
+                  whoever a given partner's internal Signode contact is. */}
+              <div className="text-sm text-[hsl(var(--signode-black))]">
+                Your internal Signode Support Contact
               </div>
             </div>
           </CardContent>
@@ -87,7 +85,7 @@ export function HelpPage() {
         <TipCard
           icon={<Upload className="h-5 w-5" />}
           title="Uploading files"
-          body="Drag files onto the Upload page or click to browse. Files are DLP-scanned before they land in the shared folder."
+          body="Drag files onto the Upload page or click to browse. Files are scanned by security software before they land in the shared folder."
         />
         <TipCard
           icon={<KeyRound className="h-5 w-5" />}
@@ -132,12 +130,11 @@ export function HelpPage() {
             Security incident?
           </div>
           <div className="mt-2 text-lg font-semibold">
-            If you suspect a compromised account or leaked file, contact the IT
-            Service Center immediately.
+            If you suspect a compromised account or leaked file, contact your
+            internal Signode Support Contact immediately.
           </div>
-          <div className="mt-3 font-mono text-sm text-white/80">
-            itservicecenter@signode.com &middot; Subject line: "SecureShare —
-            urgent security"
+          <div className="mt-3 text-sm text-white/80">
+            Report it as urgent and reference SecureShare.
           </div>
         </CardContent>
       </Card>

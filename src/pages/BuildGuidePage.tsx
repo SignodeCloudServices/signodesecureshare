@@ -52,7 +52,7 @@ The app runs at http://localhost:5173.
 Not required for local development — all data is currently mocked. Backend integration is tracked on the Deployment Roadmap page.
 
 ## Contact
-IT Service Center — itservicecenter@signode.com
+Reach Platform Engineering through the internal support channel.
 `;
 
 export function BuildGuidePage() {

@@ -69,6 +69,6 @@ bootstrap().catch((e) => {
     root.innerHTML =
       '<div style="font-family:system-ui;padding:2rem;color:#231F20">' +
       "<h1>Sign-in unavailable</h1><p>The portal could not initialise authentication. " +
-      "Please contact itservicecenter@signode.com.</p></div>";
+      "Please contact your internal Signode Support Contact.</p></div>";
   }
 });

@@ -161,8 +161,8 @@ export function LiveUpload() {
           <AlertCircle className="mx-auto h-8 w-8 text-[hsl(var(--signode-orange))]" />
           <h2 className="mt-3 text-lg font-semibold">No upload destinations</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Your account has no folders you can upload to. Contact{" "}
-            <code>itservicecenter@signode.com</code>.
+            Your account has no folders you can upload to. Contact your
+            internal Signode Support Contact.
           </p>
         </CardContent>
       </Card>

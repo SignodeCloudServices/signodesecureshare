@@ -1,6 +1,33 @@
+// ---------------------------------------------------------------------------
+// Send Invitation — DEMO MODE ONLY. Renders nothing in live mode.
+//
+// Hidden from the live portal on 9 Oct 2026. This dialog is scaffolding from
+// the original mock build and it misrepresents the system in four ways:
+//
+//   1. It reads the persona switcher (`usePersona`), not the signed-in Entra
+//      identity, so "who may invite" is answered by demo machinery.
+//   2. Its folder list comes from `folderTree.ts` — seeded data whose shape no
+//      longer matches SharePoint. Mock data in live mode, against the standing
+//      rule in CLAUDE.md.
+//   3. It ignores `guestEligibleScopes()` entirely, so it would offer internal
+//      department folders as invitation targets — bypassing the one guard
+//      built to prevent over-granting an internal folder to a partner.
+//   4. The token is `Math.random()` and no mail is sent, while the UI says a
+//      link was delivered.
+//
+// (3) is the serious one: it inverts the control rather than merely faking it.
+//
+// The real flow does not belong here at all. Invitation is an app-only
+// operation (create a B2B guest, write group membership) and app-only
+// permissions are inert on a public client, so it cannot be built in the SPA —
+// it needs the Functions API. See RB-31 for the build sequence. When that
+// lands, this component is deleted rather than fixed.
+// ---------------------------------------------------------------------------
+
 import * as React from "react";
 import { usePersona } from "@/lib/persona-context";
 import { canSendInvitations } from "@/lib/personas";
+import { DEMO_MODE } from "@/lib/auth-context";
 import {
   INVITATION_DEFAULT_DAYS,
   INVITATION_MAX_DAYS,
@@ -30,7 +57,7 @@ import { flattenTree, FOLDER_TREE } from "@/lib/folderTree";
 import { isPathInScope } from "@/lib/personas";
 import { useToast } from "@/hooks/use-toast";
 
-export function SendInvitationDialog() {
+function DemoSendInvitationDialog() {
   const { persona } = usePersona();
   const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
@@ -60,9 +87,11 @@ export function SendInvitationDialog() {
     const token = Math.random().toString(36).substring(2, 10);
     const link = `https://secureshare.pkgconnect.com/invite/${token}`;
     setSentLink(link);
+    // Say "simulated" rather than "sent". Nothing is emailed, and the demo
+    // sign-in gate labels its simulated steps the same way.
     toast({
-      title: "Invitation sent",
-      description: `A secure link was sent to ${email}.`,
+      title: "Invitation link generated (simulated)",
+      description: `No mail was sent. In the live flow Entra invites ${email}.`,
     });
   }
 
@@ -79,7 +108,7 @@ export function SendInvitationDialog() {
     setTimeout(() => {
       setEmail("");
       setFolder("");
-      setExpires("7");
+      setExpires(String(INVITATION_DEFAULT_DAYS));
       setNote("");
       setSentLink(null);
       setCopied(false);
@@ -101,10 +130,11 @@ export function SendInvitationDialog() {
         {sentLink ? (
           <>
             <DialogHeader>
-              <DialogTitle>Invitation ready</DialogTitle>
+              <DialogTitle>Invitation ready (illustrative)</DialogTitle>
               <DialogDescription>
-                Share this secure link with the recipient. It will expire in{" "}
-                {expires} days.
+                Placeholder link, not a working invitation. In the live flow
+                Entra issues and validates the redemption link, with a{" "}
+                {expires}-day window.
               </DialogDescription>
             </DialogHeader>
             <div className="rounded-md border bg-muted/40 p-3 flex items-center gap-2">
@@ -194,4 +224,17 @@ export function SendInvitationDialog() {
       </DialogContent>
     </Dialog>
   );
+}
+
+/**
+ * Live mode renders nothing at all — no button, so nothing to click by
+ * accident while an admin is presenting.
+ *
+ * Gated here rather than at the call site in `SignodeHeader` so the guard
+ * travels with the component: any future call site inherits it instead of
+ * having to remember. Same split-at-the-boundary shape as `SignInGate`, which
+ * keeps the hook order unconditional.
+ */
+export function SendInvitationDialog() {
+  return DEMO_MODE ? <DemoSendInvitationDialog /> : null;
 }

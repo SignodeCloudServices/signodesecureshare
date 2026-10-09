@@ -52,8 +52,11 @@ export function SignodeHeader() {
             </span>
           </NavLink>
           <div className="flex items-center gap-3">
-            {/* Invitations are an admin action; the persona switcher is a demo
-                affordance and must never appear to a real scoped user. */}
+            {/* Invitations are an admin action, and the persona switcher is a
+                demo affordance that must never appear to a real scoped user.
+                SendInvitationDialog additionally renders nothing in live mode
+                — it is mock scaffolding until RB-31 builds the real flow
+                behind the API. */}
             {isGlobalAdmin && <SendInvitationDialog />}
             {DEMO_MODE ? (
               <PersonaSwitcher />

@@ -12,7 +12,7 @@ const FAQS = [
   },
   {
     q: "How do I invite an external vendor to a folder?",
-    a: "Only internal Signode users (Global Admin, AMER Sales, CORP Legal) can send invitations. Use the Send Invitation button in the top-right. External vendors cannot invite others.",
+    a: "Partner access is arranged internally: a Signode administrator has the partner added as a guest and granted the specific folder. Inviting from inside the portal is planned. External parties can never invite anyone.",
   },
   {
     q: "What file types are blocked?",

@@ -149,9 +149,30 @@ Workflows must declare `permissions: id-token: write`, or `azure/login` fails wi
 error that does not point at the cause. Secrets must exist at the level the job reads
 from — a missing secret resolves to an empty string with no warning.
 
-Invitation tokens must be server-issued, CSPRNG, single-use, and revocable. The current
-`Math.random()` token in `SendInvitationDialog.tsx` is demo-only and goes away entirely
-when Entra owns invitations.
+### Invitations: Entra issues them, the portal never does
+
+**`SendInvitationDialog.tsx` renders nothing in live mode** (gated 9 Oct 2026, inside the
+component so the guard travels with it). It is mock scaffolding and it was wrong in a way
+that mattered: it read the persona switcher rather than the signed-in identity, drew its
+folder list from seeded `folderTree.ts`, **ignored `guestEligibleScopes()` entirely** — so
+it would have offered internal department folders as invitation targets, inverting the one
+guard that exists to stop over-granting to a partner — and claimed mail was sent when none
+was. In the production build Vite dead-code-eliminates the whole thing.
+
+The real flow cannot live in the SPA. Creating a B2B guest and writing group membership are
+app-only operations, and app-only permissions are inert on a public client, so **invitation
+is the first feature with a hard architectural dependency on the Functions API**. See
+RB-31 for the build sequence.
+
+Under that design the portal issues no token at all — Entra generates and validates the
+redemption link. So the standing requirement that invitation tokens be server-issued,
+CSPRNG, single-use and revocable is satisfied by there being no token; keep the rule as a
+guard against anyone reintroducing one. What the portal stores is an invitation *record*
+(who, whom, which scope, until when) for audit and revocation — metadata, not a credential.
+
+Copy that told users to "use the Send Invitation button" was corrected on `LiveHomePage`
+and `HelpPage` at the same time. If that button is ever restored, those two need revisiting
+together — they are the surfaces that describe it.
 
 ---
 

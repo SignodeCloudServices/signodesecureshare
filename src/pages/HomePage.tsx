@@ -123,13 +123,16 @@ function LiveHomePage() {
               <div className="font-semibold text-[hsl(var(--signode-black))]">
                 Need to share with someone new?
               </div>
+              {/* Points at the real path, not a button. In-portal invitation
+                  is RB-31 and needs the API tier; until then partners are
+                  invited as Entra B2B guests. "Use the Send Invitation
+                  button" was accurate only while that mock button existed —
+                  it was hidden from live mode on 9 Oct. */}
               <div className="text-sm text-muted-foreground">
-                Use the <strong>Send Invitation</strong> button in the top-right
-                to generate a scoped, expiring link.
+                Partner access is granted by adding an Entra B2B guest to the
+                folder&rsquo;s security group. Raise it with the Identity team —
+                in-portal invitation is planned.
               </div>
-            </div>
-            <div className="text-[hsl(var(--signode-orange))]">
-              <ArrowRight className="h-6 w-6" />
             </div>
           </CardContent>
         </Card>

@@ -1,9 +1,27 @@
+// ---------------------------------------------------------------------------
+// Recent activity.
+//
+// LIVE MODE  — a placeholder. No activity data, because there is none to show:
+//              file activity is not available from Microsoft Graph, it lives
+//              in the Unified Audit Log (RB-19 → RB-26).
+//
+// DEMO MODE  — the seeded version below: invented filenames and a random
+//              series, for illustrating the intended shape.
+//
+// Gated 9 Oct 2026. The page had no mode branch at all, and while it was
+// removed from the nav on 6 Oct the route stayed registered — so
+// /recent rendered fabricated activity, with invented legal and compliance
+// filenames, to any signed-in user including a scoped partner. Removing the
+// nav link concealed it rather than fixing it.
+// ---------------------------------------------------------------------------
+
 import * as React from "react";
 import * as d3 from "d3";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Upload as UploadIcon, Download } from "lucide-react";
+import { FileText, Upload as UploadIcon, Download, Clock } from "lucide-react";
 import { EXPIRY_CRITICAL_DAYS, expirySeverity } from "@/lib/retention";
+import { DEMO_MODE } from "@/lib/auth-context";
 
 const DAYS = 14;
 
@@ -135,7 +153,7 @@ function ActivityChart({ data }: { data: { date: Date; uploads: number; download
   );
 }
 
-export function RecentPage() {
+function DemoRecentPage() {
   const [data] = React.useState(() => generateSeries());
 
   const totalUp = data.reduce((s, d) => s + d.uploads, 0);
@@ -230,4 +248,46 @@ export function RecentPage() {
       </Card>
     </div>
   );
+}
+
+/**
+ * Live placeholder.
+ *
+ * Says what is coming and why it is not here, rather than showing a number.
+ * Deliberately contains no file names, paths or counts — a placeholder that
+ * invents plausible-looking detail is the problem this replaced.
+ */
+function LiveRecentPage() {
+  return (
+    <div className="mx-auto max-w-5xl px-6 py-8 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-[hsl(var(--signode-black))]">
+          Recent activity
+        </h1>
+        <p className="mt-2 text-muted-foreground">
+          Upload and download history for the folders assigned to you.
+        </p>
+      </div>
+
+      <Card>
+        <CardContent className="p-10 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[hsl(var(--signode-orange))]/10 text-[hsl(var(--signode-orange))]">
+            <Clock className="h-7 w-7" />
+          </div>
+          <h2 className="mt-4 text-lg font-semibold text-[hsl(var(--signode-black))]">
+            Not available yet
+          </h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+            Activity history is being built on the Microsoft 365 audit trail.
+            Until that is in place this page has nothing to show, and we would
+            rather show nothing than an estimate.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export function RecentPage() {
+  return DEMO_MODE ? <DemoRecentPage /> : <LiveRecentPage />;
 }

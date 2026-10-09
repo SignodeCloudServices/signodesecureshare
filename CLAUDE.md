@@ -219,9 +219,15 @@ presentation.
 **Incomplete features**
 - Upload is limited to 4 MB (simple PUT). Larger files need `createUploadSession` with
   chunking.
-- `RecentPage` is hidden from the nav — it renders seeded activity and the real version
-  needs the Unified Audit Log (RB-26). The route is still registered; restoring it is a
-  one-line change in `SignodeHeader`.
+- `RecentPage` renders a "not available yet" placeholder in live mode and the seeded
+  version only under `VITE_DEMO_MODE` (gated 9 Oct 2026). It is also hidden from the nav.
+  The real version needs the Unified Audit Log (RB-19 → RB-26).
+  **Why both:** it had no mode branch at all, so while the nav link was removed on 6 Oct
+  the route stayed registered and `/recent` served fabricated activity — invented legal
+  and compliance filenames, `Math.random()` charts — to any signed-in user, a scoped
+  partner included. Hiding the link concealed it; the gate fixes it. Restoring the nav
+  link is still a one-line change in `SignodeHeader`, but do not restore it until there
+  is real data behind it.
 - `folderTree.ts` is seeded demo data whose shape no longer matches SharePoint. Only
   reachable via `VITE_DEMO_MODE`. Either refresh it from the live tree or delete it once
   demo mode is retired.
@@ -266,7 +272,9 @@ presentation.
   `rootScopePaths()` and label with `scopeLabel()`, both in `folder-scopes.ts`. Unrelated
   grants are not one tree and have no ancestor the user may see, so they cannot be
   browsed as one: `LiveScopedBrowser` shows a Department picker when there is more than
-  one root, and nothing at all when there is one.
+  one root, and nothing at all when there is one. `LiveHomePage`'s "Folders in scope"
+  tile counts `rootScopePaths(scopedPaths)` for the same reason — counting the raw list
+  reported two folders to a region-plus-department user while the picker offered one.
 - Prefer `useMemo` for derived collections used as effect dependencies.
 - Avoid `any`. `Persona`, `FolderScope` and `DriveItem` are exported; use them.
 - Signode house style: charcoal `#231F20`, shield red / burnt orange `#B43D27`, white.

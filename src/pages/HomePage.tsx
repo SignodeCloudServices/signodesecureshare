@@ -3,6 +3,7 @@ import { usePersona } from "@/lib/persona-context";
 import { canSendInvitations } from "@/lib/personas";
 import { useAuth, DEMO_MODE } from "@/lib/auth-context";
 import { FILE_RETENTION_DAYS } from "@/lib/retention";
+import { rootScopePaths } from "@/lib/folder-scopes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -61,9 +62,13 @@ function LiveHomePage() {
 
   if (!isAuthenticated) return null;
 
+  // Count the same roots the browser offers. Raw `scopedPaths` has one entry
+  // per group, so a user holding a region *and* a department inside it would
+  // read "2 folders in scope" here while the Department picker showed one —
+  // the region grant cascades and `rootScopePaths` collapses it.
   const folderCount = scopedPaths.includes("*")
     ? "All"
-    : scopedPaths.length.toString();
+    : rootScopePaths(scopedPaths).length.toString();
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8 space-y-8">

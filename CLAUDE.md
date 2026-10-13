@@ -16,7 +16,9 @@ this has already caused a day of the portal serving a stale build while finished
 sat on `feat/msal-auth`.
 
 **Production is gated (added 13 Oct 2026).** `main` deploys to **dev** only. Production
-deploys only through `deploy-prod.yml` — see *Release process* below.
+deploys only through `deploy-prod.yml` — see *Release process* below. First gated
+production release: 13 Oct 2026, `main` @ `5622aff` (manual run). Since then the live
+portal signs in through `cs-secure-share-prod-spa`.
 
 | | Static Web App | Tier | URL | SPA registration |
 |---|---|---|---|---|
@@ -279,7 +281,7 @@ presentation.
   build time only. Keeping build tools out of `dependencies` is what makes
   `npm audit --omit=dev` measure what actually ships to the browser.
 - Verify with `npm run build` after changes — it runs `tsc -b` first, so type errors fail
-  the build. Expect roughly 850 kB.
+  the build. Expect roughly 680 kB (since WS1.3).
 - `npm ci`, not `npm install`. The lockfile is `package-lock.json`; bun is not used.
 - Keep demo mode working behind `VITE_DEMO_MODE`.
 - **A user can hold several unrelated grants.** `scopedPaths` is a list, not a path.
@@ -345,20 +347,23 @@ These cannot be set from a workflow file. Status as of 13 Oct 2026:
 - [x] **Environment variable** `PROD_URL` on `prod` = `https://secureshare.pkgconnect.com`;
       change to `https://secureshare.signode.com` at the WS2.2 cutover.
 
-### Redirect URIs (platform **Single-page application**, exact origin, no trailing slash)
-
-| Registration | URIs | Notes |
-|---|---|---|
-| `cs-secure-share-dev-spa` | `https://calm-smoke-01ee89410.2.azurestaticapps.net`, `https://secureshare.pkgconnect.com` | Remove the pkgconnect URI after the first prod release; until then the live portal still runs a dev-registration build |
-| `cs-secure-share-prod-spa` | `https://secureshare.pkgconnect.com` | Add `https://secureshare.signode.com` at the WS2.2 cutover |
-
-A URI under the **Web** platform fails with `AADSTS9002326`; a missing one with `AADSTS50011`.
 - [ ] **Federated credential** for the `prod` environment on `cs-secure-share-github-deploy`
       (subject `repo:SignodeCloudServices/signodesecureshare:environment:prod`), needed
       only when infrastructure steps are added.
 - [ ] **Repository visibility → private.** Check the org's GitHub plan first: on GitHub
       Free, branch protection and environment required reviewers are not available on
       private repositories, so going private would silently remove the gates above.
+
+### Redirect URIs (platform **Single-page application**, exact origin, no trailing slash)
+
+| Registration | URIs | Notes |
+|---|---|---|
+| `cs-secure-share-dev-spa` | `https://calm-smoke-01ee89410.2.azurestaticapps.net`, `http://localhost:5173` | Live URL removed 13 Oct after the first prod release |
+| `cs-secure-share-prod-spa` | `https://secureshare.pkgconnect.com` | Add `https://secureshare.signode.com` at the WS2.2 cutover. Never add localhost |
+
+A URI under the **Web** platform fails with `AADSTS9002326`; a missing one with `AADSTS50011`.
+`cs-secure-share-prod-spa` has *Assignment required* on, with the 42 folder groups and
+`sg-SecureShare-Admins` assigned — a new partner group must be assigned there too.
 
 ## Where things live
 

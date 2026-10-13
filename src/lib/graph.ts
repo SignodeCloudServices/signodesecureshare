@@ -97,7 +97,22 @@ export async function getMyGroupIds(
 // Folder and file operations
 // ---------------------------------------------------------------------------
 
-function mapItem(raw: any): DriveItem {
+/**
+ * The subset of a Graph driveItem this portal reads. Typed rather than `any`
+ * so a renamed or missing field fails the build instead of rendering
+ * `undefined` to a partner.
+ */
+interface RawDriveItem {
+  id: string;
+  name: string;
+  size?: number;
+  lastModifiedDateTime: string;
+  folder?: { childCount?: number };
+  lastModifiedBy?: { user?: { displayName?: string } };
+  "@microsoft.graph.downloadUrl"?: string;
+}
+
+function mapItem(raw: RawDriveItem): DriveItem {
   return {
     id: raw.id,
     name: raw.name,
@@ -127,7 +142,7 @@ export async function listChildren(
     ? `/sites/${SITE_ID}/drives/${DRIVE_ID}/root:/${encodeURI(graphPath)}:/children`
     : `/sites/${SITE_ID}/drives/${DRIVE_ID}/root/children`;
 
-  const res = await graphFetch<{ value: any[] }>(msal, account, url);
+  const res = await graphFetch<{ value: RawDriveItem[] }>(msal, account, url);
   return (res.value ?? []).map(mapItem);
 }
 
@@ -138,7 +153,7 @@ export async function getDownloadUrl(
   portalPath: string
 ): Promise<string> {
   const graphPath = toGraphPath(portalPath);
-  const item = await graphFetch<any>(
+  const item = await graphFetch<RawDriveItem>(
     msal,
     account,
     `/sites/${SITE_ID}/drives/${DRIVE_ID}/root:/${encodeURI(graphPath)}`

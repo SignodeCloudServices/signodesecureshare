@@ -7,7 +7,6 @@ import { msalConfig } from "@/lib/auth-config";
 import { AuthProvider, DEMO_MODE } from "@/lib/auth-context";
 import { PersonaProvider } from "@/lib/persona-context";
 import App from "./App";
-// @ts-ignore: side-effect import of CSS file for bundler/runtime
 import "./index.css";
 
 const msalInstance = new PublicClientApplication(msalConfig);

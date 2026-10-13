@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { usePersona } from "@/lib/persona-context";
 import { useAuth, DEMO_MODE } from "@/lib/auth-context";
 import { LiveScopedBrowser } from "./LiveScopedBrowser";
-import { isPathInScope } from "@/lib/personas";
+import { isPathInScope, type Persona } from "@/lib/personas";
 import { FOLDER_TREE, findNode, type FolderNode } from "@/lib/folderTree";
 import { FILE_RETENTION_DAYS, expirySeverity } from "@/lib/retention";
 import { AccessRestricted } from "@/components/signode/AccessRestricted";
@@ -69,14 +69,14 @@ function expiryBadge(days: number) {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function hasScopedDescendant(persona: any, path: string): boolean {
+function hasScopedDescendant(persona: Persona, path: string): boolean {
   if (persona.scopedPaths.includes("*")) return true;
-  return persona.scopedPaths.some((s: string) => s.startsWith(path + "/"));
+  return persona.scopedPaths.some((s) => s.startsWith(path + "/"));
 }
 
 // The persona's "home" folder — the first (and usually only) path in their scope.
 // For Global Admin the home is the tree root.
-function personaHomePath(persona: any): string {
+function personaHomePath(persona: Persona): string {
   if (persona.scopedPaths.includes("*")) return FOLDER_TREE.path;
   return persona.scopedPaths[0] || FOLDER_TREE.path;
 }

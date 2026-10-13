@@ -15,6 +15,9 @@ Static Web App. Work merged only into a feature branch is invisible on the live 
 this has already caused a day of the portal serving a stale build while finished work
 sat on `feat/msal-auth`.
 
+**Production is gated (added 13 Oct 2026).** `main` deploys to **dev** only. Production
+deploys only through `deploy-prod.yml` — see *Release process* below.
+
 ---
 
 ## Ratified decisions — do not contradict these
@@ -236,9 +239,9 @@ presentation.
   positioned as the designed end state.
 
 **Hygiene**
-- `npm run lint` fails — the script calls `eslint .` but eslint is not a dependency and
-  there is no config. Either add it properly or drop the script; do not add a CI step
-  that is permanently red.
+- `react-router-dom` 6.x carries a **moderate** advisory (open redirect via backslash
+  in `<Link>` / `useNavigate`). The fix is the v7 major upgrade. CI blocks only on high,
+  so this does not fail the build; schedule the upgrade rather than forget it.
 - `@tanstack/react-query` is declared but no `QueryClientProvider` exists. Keep it — it
   is the right choice for caching Graph calls. Wire it when the data layer grows.
 - `README.md` is UTF-16LE and contains only the repo name.
@@ -261,6 +264,11 @@ presentation.
 
 ## Conventions
 
+- Run `npm run lint` and `npm run build` after changes. Lint is ESLint 9
+  (`eslint.config.js`) and runs in CI; errors fail the PR, warnings do not.
+- `tailwindcss` and `tailwindcss-animate` are **devDependencies** on purpose: they run at
+  build time only. Keeping build tools out of `dependencies` is what makes
+  `npm audit --omit=dev` measure what actually ships to the browser.
 - Verify with `npm run build` after changes — it runs `tsc -b` first, so type errors fail
   the build. Expect roughly 850 kB.
 - `npm ci`, not `npm install`. The lockfile is `package-lock.json`; bun is not used.
@@ -292,6 +300,44 @@ presentation.
   library, which threshold, which of two similar-sounding permissions.
 
 ---
+
+## Release process
+
+| Workflow | Trigger | Target | Gate |
+|---|---|---|---|
+| `ci.yml` | Pull request to `main` | — | lint, runtime `npm audit` (high+), build |
+| `deploy-dev.yml` | Push to `main` | dev SWA | none |
+| `deploy-prod.yml` | Tag `v*`, or manual run | prod SWA | commit must be on `main`; lint, audit, build, bundle-disclosure check; **`prod` environment approval** |
+
+To release: merge to `main` through a PR, confirm dev, then `git tag v1.0.0 && git push
+origin v1.0.0` (or run *Deploy - prod* from the Actions tab), and approve the `prod`
+deployment when it pauses.
+
+**The bundle-disclosure step fails production deploys until WS1.3 lands.** It greps
+`dist/` for markers of the internal documentation pages (break-glass, Sentinel, NIST,
+Purview, Entra PIM). That is intended: the pipeline, not memory, enforces that internal
+docs never ship to the internet. Fix the build, not the pattern.
+
+### One-time setup that lives in repository settings, not in code
+
+These cannot be set from a workflow file. Status as of 13 Oct 2026:
+
+- [ ] **Branch protection on `main`** (Settings → Branches): require a pull request,
+      require the `build` status check (from `ci.yml`) with branches up to date, block
+      force-push and deletion. Approvals: 0 while Grant is the only engineer, 1 once a
+      second engineer joins.
+- [ ] **Environment `prod`** (Settings → Environments): required reviewers (Grant + one
+      other), deployment branches and tags limited to `main` and `v*`.
+- [ ] **Environment secret** `SWA_DEPLOYMENT_TOKEN_PROD` on `prod` — from the prod Static
+      Web App once WS1.1 creates it.
+- [ ] **Environment variable** `PROD_URL` on `prod` — `https://secureshare.signode.com`
+      after the WS2.2 cutover; the SWA default hostname until then.
+- [ ] **Federated credential** for the `prod` environment on `cs-secure-share-github-deploy`
+      (subject `repo:SignodeCloudServices/signodesecureshare:environment:prod`), needed
+      only when infrastructure steps are added.
+- [ ] **Repository visibility → private.** Check the org's GitHub plan first: on GitHub
+      Free, branch protection and environment required reviewers are not available on
+      private repositories, so going private would silently remove the gates above.
 
 ## Where things live
 

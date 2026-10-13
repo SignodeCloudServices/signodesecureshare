@@ -32,6 +32,19 @@ jobs:
       # disagree - which is what you want.
       - run: npm ci
 
+      # Lint. ESLint 9 flat config (eslint.config.js): recommended JS and
+      # TypeScript rules plus the React hooks rules, which catch real bugs
+      # such as stale closures and conditionally-called hooks. Warnings do
+      # not fail the job; errors do.
+      - run: npm run lint
+
+      # Dependency audit, RUNTIME dependencies only (--omit=dev). Build tools
+      # such as vite and tailwindcss never reach a partner's browser, so a
+      # finding in them is not a finding in the portal. Fails on high or
+      # critical. Moderate findings are reported in the log but do not block.
+      - name: Audit runtime dependencies
+        run: npm audit --omit=dev --audit-level=high
+
       # Build. package.json runs `tsc -b && vite build`, so TypeScript
       # errors fail here. This is the real gate.
       - run: npm run build

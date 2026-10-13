@@ -53,3 +53,15 @@ jobs:
       # A build that "succeeds" and emits nothing is a real failure mode.
       - name: Verify build output
         run: test -f dist/index.html || (echo "dist/index.html missing" && exit 1)
+
+      # Disclosure check, same as deploy-prod.yml (WS1.3). Run here too so a PR
+      # that re-imports an internal documentation page statically fails at
+      # review, not weeks later at release time.
+      - name: No internal documentation in the bundle
+        run: |
+          pattern='break-glass|Sentinel|NIST 800|Purview|Entra PIM'
+          if grep -Eiol "$pattern" dist/assets/*.js; then
+            echo "::error::Internal documentation found in the bundle (files above). See src/lib/admin-docs.ts."
+            exit 1
+          fi
+          echo "OK: no internal documentation markers in dist/."

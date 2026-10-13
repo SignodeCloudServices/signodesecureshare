@@ -3,6 +3,7 @@ import { PersonaSwitcher } from "./PersonaSwitcher";
 import { SendInvitationDialog } from "./SendInvitationDialog";
 import { usePersona } from "@/lib/persona-context";
 import { useAuth, DEMO_MODE } from "@/lib/auth-context";
+import { INCLUDE_ADMIN_DOCS } from "@/lib/admin-docs";
 
 type NavItem = {
   to: string;
@@ -19,13 +20,19 @@ const NAV_ITEMS: NavItem[] = [
   // seeded activity, which would be the one screen contradicting the live data
   // everywhere else. Route kept registered so restoring it is a one-line change.
   { to: "/help", label: "Help" },
-  { to: "/build-guide", label: "Build Guide", adminOnly: true },
-  { to: "/architecture", label: "Architecture", adminOnly: true },
-  { to: "/security", label: "Security", adminOnly: true },
-  { to: "/controls", label: "Controls", adminOnly: true },
-  { to: "/deployment", label: "Deployment Roadmap", adminOnly: true },
-  { to: "/runbooks", label: "Runbooks", adminOnly: true },
-  { to: "/source", label: "Source & IaC", adminOnly: true },
+  // Internal documentation links exist only in builds that include the pages
+  // (WS1.3, src/lib/admin-docs.ts). "Source & IaC" was a placeholder page and
+  // is removed; the IaC lives in the repository.
+  ...(INCLUDE_ADMIN_DOCS
+    ? [
+        { to: "/build-guide", label: "Build Guide", adminOnly: true },
+        { to: "/architecture", label: "Architecture", adminOnly: true },
+        { to: "/security", label: "Security", adminOnly: true },
+        { to: "/controls", label: "Controls", adminOnly: true },
+        { to: "/deployment", label: "Deployment Roadmap", adminOnly: true },
+        { to: "/runbooks", label: "Runbooks", adminOnly: true },
+      ]
+    : []),
 ];
 
 export function SignodeHeader() {

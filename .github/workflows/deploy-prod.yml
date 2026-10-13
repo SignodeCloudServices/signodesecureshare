@@ -63,9 +63,9 @@ jobs:
       #   VITE_DEMO_MODE empty  -> live mode only; personas, seeded folder tree
       #                            and the mock invitation dialog are removed
       #                            by dead-code elimination.
-      #   VITE_INCLUDE_ADMIN_DOCS=false -> reserved for WS1.3, which gates the
-      #                            internal documentation pages out of the
-      #                            bundle. Harmless until that change lands.
+      #   VITE_INCLUDE_ADMIN_DOCS=false -> internal documentation pages are not
+      #                            emitted (WS1.3). False is also the default;
+      #                            stated so nobody "fixes" it by flipping it.
       - name: Build
         run: npm run build
         env:
@@ -87,10 +87,9 @@ jobs:
 
       # Disclosure gate. The admin documentation pages name internal security
       # tooling, the NIST control inventory and the break-glass procedure. They
-      # must never ship in the internet-facing bundle. This step FAILS the
-      # production deploy until WS1.3 removes them from the prod build. That is
-      # deliberate: it is the go/no-go check, enforced by the pipeline instead
-      # of by memory. If it fails, the fix is in the build, not in this list.
+      # must never ship in the internet-facing bundle. Since WS1.3 they are
+      # excluded at build time (src/lib/admin-docs.ts); this step proves it on
+      # every release. If it fails, the fix is in the build, not in this list.
       - name: No internal documentation in the bundle
         run: |
           pattern='break-glass|Sentinel|NIST 800|Purview|Entra PIM'

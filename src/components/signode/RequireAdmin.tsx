@@ -16,11 +16,11 @@ import { usePersona } from "@/lib/persona-context";
  *
  * Hiding a nav item is presentation. This is the guard.
  *
- * Note this is still client-side: the admin pages are static content bundled
- * into the SPA, so a determined reader could find the text in the JS. The
- * real fix is to stop shipping internal documentation inside an
- * internet-facing portal — tracked separately. This guard closes the
- * trivial path.
+ * This guard is client-side, so it was never enough on its own: while the
+ * admin pages were statically imported, their text shipped in the JS bundle.
+ * Since WS1.3 (13 Oct 2026) deployed builds do not contain those pages at all
+ * (src/lib/admin-docs.ts). This guard still matters for local builds that
+ * include them.
  */
 export function RequireAdmin({ children }: { children: React.ReactNode }) {
   const { isAdmin, isAuthenticated, isLoading } = useAuth();

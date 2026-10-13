@@ -216,18 +216,14 @@ presentation.
 ## Known gaps
 
 **Security / correctness**
-- `RequireAdmin` blocks navigation to the admin documentation pages, but their content is
-  static and still ships in the bundle to every visitor. The real fix is not shipping
-  internal runbooks inside an internet-facing portal — consider an env flag or a separate
-  build.
-  **This is now the largest open disclosure gap.** Scrubbing product names from the
-  user-facing copy (7 Oct) does not touch the bundle: `ArchitecturePage`,
-  `SecurityPage`, `ControlsPage`, `DeploymentPage` and `RunbooksPage` still name
-  Purview, Sentinel, Entra PIM, the NIST control inventory with per-control
-  implementation status, and the break-glass procedure. All of it is readable from
-  `view-source` by any anonymous visitor, without signing in. The AUP line was one
-  sentence; this is the architecture. Raise it with the security team alongside the
-  AUP change.
+- ~~Admin documentation pages shipped in the public bundle~~ — **fixed 13 Oct 2026
+  (WS1.3).** `BuildGuidePage`, `ArchitecturePage`, `SecurityPage`, `ControlsPage`,
+  `DeploymentPage` and `RunbooksPage` are lazy-loaded only when the build sets
+  `VITE_INCLUDE_ADMIN_DOCS=true` (`src/lib/admin-docs.ts`). No deployed build sets it, so
+  they are not emitted into `dist/` at all; `deploy-prod.yml` greps the bundle to prove it.
+  To read them locally: `VITE_INCLUDE_ADMIN_DOCS=true npm run dev`. **Never set the flag
+  in a workflow** — dev is a public URL too. The import sites compare `import.meta.env`
+  inline on purpose: that literal is what lets the bundler drop the branch.
 - `BrowsePage` deep links are broken in demo mode: `?path=` is read into initial state,
   then the `[persona.id]` effect overwrites it on mount.
 - No error boundary. A render error anywhere blanks the page.
@@ -326,10 +322,10 @@ To release: merge to `main` through a PR, confirm dev, then `git tag v1.0.0 && g
 origin v1.0.0` (or run *Deploy - prod* from the Actions tab), and approve the `prod`
 deployment when it pauses.
 
-**The bundle-disclosure step fails production deploys until WS1.3 lands.** It greps
-`dist/` for markers of the internal documentation pages (break-glass, Sentinel, NIST,
-Purview, Entra PIM). That is intended: the pipeline, not memory, enforces that internal
-docs never ship to the internet. Fix the build, not the pattern.
+**The bundle-disclosure step** greps `dist/` for markers of the internal documentation
+pages (break-glass, Sentinel, NIST, Purview, Entra PIM) and fails the production deploy
+if any appear. It passes since WS1.3. If it ever fails, something re-imported a doc page
+statically or set `VITE_INCLUDE_ADMIN_DOCS` — fix the build, not the pattern.
 
 ### One-time setup that lives in repository settings, not in code
 

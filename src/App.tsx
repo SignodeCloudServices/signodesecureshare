@@ -1,9 +1,4 @@
-import { DeploymentPage } from "@/pages/DeploymentPage";
-import { RunbooksPage } from "@/pages/RunbooksPage";
-import { ControlsPage } from "@/pages/ControlsPage";
-import { BuildGuidePage } from "@/pages/BuildGuidePage";
-import { SecurityPage } from "@/pages/SecurityPage";
-import { ArchitecturePage } from "@/pages/ArchitecturePage";
+import * as React from "react";
 import { Routes, Route } from "react-router-dom";
 import { SignodeHeader } from "@/components/signode/SignodeHeader";
 import { SignInGate } from "@/components/signode/SignInGate";
@@ -16,6 +11,28 @@ import { HelpPage } from "@/pages/HelpPage";
 import { BrowsePage } from "@/pages/BrowsePage";
 import { UploadPage } from "@/pages/UploadPage";
 import { RecentPage } from "@/pages/RecentPage";
+
+// ---------------------------------------------------------------------------
+// Internal documentation routes — WS1.3. See src/lib/admin-docs.ts.
+//
+// Dynamic imports inside a branch that is constant-false unless the build sets
+// VITE_INCLUDE_ADMIN_DOCS=true. In every deployed build the branch is dead and
+// none of these pages is emitted. The env var is compared HERE, inline, so the
+// bundler sees a literal; do not replace it with an imported constant.
+// ---------------------------------------------------------------------------
+type DocRoute = { path: string; Page: React.LazyExoticComponent<() => React.JSX.Element> };
+
+const ADMIN_DOC_ROUTES: DocRoute[] =
+  import.meta.env.VITE_INCLUDE_ADMIN_DOCS === "true"
+    ? [
+        { path: "/build-guide", Page: React.lazy(() => import("@/pages/BuildGuidePage").then((m) => ({ default: m.BuildGuidePage }))) },
+        { path: "/architecture", Page: React.lazy(() => import("@/pages/ArchitecturePage").then((m) => ({ default: m.ArchitecturePage }))) },
+        { path: "/security", Page: React.lazy(() => import("@/pages/SecurityPage").then((m) => ({ default: m.SecurityPage }))) },
+        { path: "/controls", Page: React.lazy(() => import("@/pages/ControlsPage").then((m) => ({ default: m.ControlsPage }))) },
+        { path: "/deployment", Page: React.lazy(() => import("@/pages/DeploymentPage").then((m) => ({ default: m.DeploymentPage }))) },
+        { path: "/runbooks", Page: React.lazy(() => import("@/pages/RunbooksPage").then((m) => ({ default: m.RunbooksPage }))) },
+      ]
+    : [];
 
 function PlaceholderPage({ name }: { name: string }) {
   const { persona } = usePersona();
@@ -51,15 +68,22 @@ export default function App() {
         <Route path="/upload" element={<UploadPage />} />
         <Route path="/recent" element={<RecentPage />} />
         <Route path="/help" element={<HelpPage />} />
-        {/* Internal documentation. Nav hides these for non-admins; RequireAdmin
-            is what actually blocks them — see the component for why both. */}
-        <Route path="/build-guide" element={<RequireAdmin><BuildGuidePage /></RequireAdmin>} />
-        <Route path="/architecture" element={<RequireAdmin><ArchitecturePage /></RequireAdmin>} />
-        <Route path="/security" element={<RequireAdmin><SecurityPage /></RequireAdmin>} />
-        <Route path="/controls" element={<RequireAdmin><ControlsPage /></RequireAdmin>} />
-        <Route path="/deployment" element={<RequireAdmin><DeploymentPage /></RequireAdmin>} />
-        <Route path="/runbooks" element={<RequireAdmin><RunbooksPage /></RequireAdmin>} />
-        <Route path="/source" element={<RequireAdmin><PlaceholderPage name="Source & IaC" /></RequireAdmin>} />
+        {/* Internal documentation: present only in builds with
+            VITE_INCLUDE_ADMIN_DOCS=true (local only). RequireAdmin still guards
+            them there; in deployed builds they do not exist. */}
+        {ADMIN_DOC_ROUTES.map(({ path, Page }) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <RequireAdmin>
+                <React.Suspense fallback={null}>
+                  <Page />
+                </React.Suspense>
+              </RequireAdmin>
+            }
+          />
+        ))}
         <Route
           path="*"
           element={<PlaceholderPage name="Page not found" />}

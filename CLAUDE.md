@@ -341,16 +341,22 @@ These cannot be set from a workflow file. Status as of 13 Oct 2026:
 - [x] Environments `dev` and `prod` created.
 - [x] **`prod` required reviewers**: Grant (add a second reviewer when one exists), 10-minute
       wait timer.
-- [ ] **`prod` deployment branches and tags**: currently *No restriction*. Set to
-      *Selected branches and tags*: branch `main`, tag `v*`.
-- [ ] **`prod` admin bypass**: *Allow administrators to bypass* is on, so the approval gate
-      is optional for admins. Turn it off; Grant is a reviewer and can still approve.
-- [ ] **`dev` secret** `SWA_DEPLOYMENT_TOKEN_DEV` → token of `secureshare-dev-swa`. It
-      previously held `secureshare-swa`'s token; until it is replaced, merges to `main`
-      still deploy to the live portal.
+- [x] **`prod` deployment branches and tags**: branch `main`, tag `v*`.
+- [x] **`prod` admin bypass** off: the approval gate applies to admins too.
+- [x] **`dev` secret** `SWA_DEPLOYMENT_TOKEN_DEV` → token of `secureshare-dev-swa` (reset
+      13 Oct after briefly being stored as a plain variable).
 - [x] **`prod` secret** `SWA_DEPLOYMENT_TOKEN_PROD` → token of `secureshare-swa`.
-- [ ] **Environment variable** `PROD_URL` on `prod` — `https://secureshare.signode.com`
-      after the WS2.2 cutover; the SWA default hostname until then.
+- [x] **Environment variable** `PROD_URL` on `prod` = `https://secureshare.pkgconnect.com`;
+      change to `https://secureshare.signode.com` at the WS2.2 cutover.
+
+### Redirect URIs (platform **Single-page application**, exact origin, no trailing slash)
+
+| Registration | URIs | Notes |
+|---|---|---|
+| `cs-secure-share-dev-spa` | `https://calm-smoke-01ee89410.2.azurestaticapps.net`, `https://secureshare.pkgconnect.com` | Remove the pkgconnect URI after the first prod release; until then the live portal still runs a dev-registration build |
+| `cs-secure-share-prod-spa` | `https://secureshare.pkgconnect.com` | Add `https://secureshare.signode.com` at the WS2.2 cutover |
+
+A URI under the **Web** platform fails with `AADSTS9002326`; a missing one with `AADSTS50011`.
 - [ ] **Federated credential** for the `prod` environment on `cs-secure-share-github-deploy`
       (subject `repo:SignodeCloudServices/signodesecureshare:environment:prod`), needed
       only when infrastructure steps are added.

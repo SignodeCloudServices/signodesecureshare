@@ -1,0 +1,137 @@
+name: Deploy - prod
+
+# Production never deploys on a push. It deploys only when someone either
+#   - pushes a version tag (v1.0.0, v1.0.1, ...), or
+#   - runs this workflow by hand from the Actions tab,
+# and then a named reviewer approves the `prod` environment. That approval
+# is the release gate; it is configured on the environment in repository
+# settings, not in this file (see "One-time setup" in CLAUDE.md).
+#
+# deploy-dev.yml is unchanged: every merge to main still goes to dev.
+on:
+  push:
+    tags: [ "v*" ]
+  workflow_dispatch:
+
+# One production deploy at a time, and never cancel one half-way through.
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+permissions:
+  id-token: write   # OIDC for azure/login, when infra steps are added
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Guard: only code that is already on main may reach production.
+  # A tag can point at any commit, including one on an unmerged branch that
+  # never went through CI review. This job refuses those.
+  # ---------------------------------------------------------------------------
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history, so merge-base can see main
+
+      - name: Commit must be on main
+        run: |
+          git fetch origin main
+          if git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "OK: $GITHUB_SHA is on main."
+          else
+            echo "::error::$GITHUB_SHA is not on main. Merge through a pull request first."
+            exit 1
+          fi
+
+  build:
+    needs: guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - name: Audit runtime dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      # Production build settings, stated explicitly rather than inherited.
+      #   VITE_DEMO_MODE empty  -> live mode only; personas, seeded folder tree
+      #                            and the mock invitation dialog are removed
+      #                            by dead-code elimination.
+      #   VITE_INCLUDE_ADMIN_DOCS=false -> reserved for WS1.3, which gates the
+      #                            internal documentation pages out of the
+      #                            bundle. Harmless until that change lands.
+      - name: Build
+        run: npm run build
+        env:
+          VITE_DEMO_MODE: ""
+          VITE_INCLUDE_ADMIN_DOCS: "false"
+
+      # Disclosure gate. The admin documentation pages name internal security
+      # tooling, the NIST control inventory and the break-glass procedure. They
+      # must never ship in the internet-facing bundle. This step FAILS the
+      # production deploy until WS1.3 removes them from the prod build. That is
+      # deliberate: it is the go/no-go check, enforced by the pipeline instead
+      # of by memory. If it fails, the fix is in the build, not in this list.
+      - name: No internal documentation in the bundle
+        run: |
+          pattern='break-glass|Sentinel|NIST 800|Purview|Entra PIM'
+          if grep -Eiol "$pattern" dist/assets/*.js; then
+            echo "::error::Internal documentation found in the production bundle (files above). See WS1.3."
+            grep -Eioh "$pattern" dist/assets/*.js | sort | uniq -c
+            exit 1
+          fi
+          echo "OK: no internal documentation markers in dist/."
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: spa-dist-prod
+          path: dist/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    # The approval gate. Required reviewers on this environment pause the job
+    # here until a reviewer approves in the Actions UI.
+    environment: prod
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: spa-dist-prod
+          path: dist/
+
+      # A missing secret resolves to an empty string with no warning, and the
+      # deploy action then fails with an unrelated-looking error. Check first.
+      - name: Check required settings
+        env:
+          TOKEN: ${{ secrets.SWA_DEPLOYMENT_TOKEN_PROD }}
+          PROD_URL: ${{ vars.PROD_URL }}
+        run: |
+          missing=0
+          [ -n "$TOKEN" ]    || { echo "::error::Environment secret SWA_DEPLOYMENT_TOKEN_PROD is not set on the prod environment."; missing=1; }
+          [ -n "$PROD_URL" ] || { echo "::error::Environment variable PROD_URL is not set on the prod environment."; missing=1; }
+          exit $missing
+
+      - name: Deploy to Static Web Apps (prod)
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.SWA_DEPLOYMENT_TOKEN_PROD }}
+          action: upload
+          app_location: "dist"
+          skip_app_build: true
+
+      # PROD_URL is an environment variable, not a hard-coded hostname, so the
+      # cutover to secureshare.signode.com (WS2.2) is a settings change.
+      - name: Smoke test
+        env:
+          PROD_URL: ${{ vars.PROD_URL }}
+        run: |
+          sleep 30
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$PROD_URL")
+          echo "Portal at $PROD_URL returned $code"
+          test "$code" = "200"

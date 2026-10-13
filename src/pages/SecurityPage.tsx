@@ -83,17 +83,15 @@ function generateAlertSeries() {
   return arr;
 }
 
-function AlertTrendChart({
-  data,
-}: {
-  data: {
-    date: Date;
-    low: number;
-    medium: number;
-    high: number;
-    critical: number;
-  }[];
-}) {
+type AlertRow = {
+  date: Date;
+  low: number;
+  medium: number;
+  high: number;
+  critical: number;
+};
+
+function AlertTrendChart({ data }: { data: AlertRow[] }) {
   const ref = React.useRef<SVGSVGElement>(null);
 
   React.useEffect(() => {
@@ -116,8 +114,8 @@ function AlertTrendChart({
     };
 
     const stack = d3
-      .stack<any>()
-      .keys(keys as unknown as string[])(data as any);
+      .stack<AlertRow>()
+      .keys(keys)(data);
 
     const x = d3
       .scaleBand<Date>()
@@ -177,13 +175,13 @@ function AlertTrendChart({
         .data(layer)
         .enter()
         .append("rect")
-        .attr("x", (d: any) => x(d.data.date)!)
-        .attr("y", (d: any) => y(d[1]))
-        .attr("height", (d: any) => y(d[0]) - y(d[1]))
+        .attr("x", (d) => x(d.data.date)!)
+        .attr("y", (d) => y(d[1]))
+        .attr("height", (d) => y(d[0]) - y(d[1]))
         .attr("width", x.bandwidth())
         .attr("fill", colors[key])
         .append("title")
-        .text((d: any) => {
+        .text((d) => {
           const total = d.data.low + d.data.medium + d.data.high + d.data.critical;
           return `${d3.timeFormat("%b %d")(d.data.date)}: ${total} alerts (${d.data.critical} crit, ${d.data.high} high, ${d.data.medium} med, ${d.data.low} low)`;
         });

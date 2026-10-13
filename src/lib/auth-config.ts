@@ -23,8 +23,21 @@ import { LogLevel } from "@azure/msal-browser";
 /** Signode corporate tenant. */
 export const TENANT_ID = "7db30361-ce9f-4244-8d28-60553bffff38";
 
-/** cs-secure-share-dev-spa — public client, auth code + PKCE, no secret. */
-export const SPA_CLIENT_ID = "212f8c25-c2f7-4e09-a316-280dd4c89e73";
+/**
+ * SPA app registration, chosen at BUILD time per environment.
+ *
+ *   dev  — cs-secure-share-dev-spa  212f8c25-c2f7-4e09-a316-280dd4c89e73
+ *   prod — cs-secure-share-prod-spa d25ef5a7-5e7a-4ebf-a06e-f3cbf047294d
+ *
+ * Both are public clients (auth code + PKCE, no secret). deploy-prod.yml sets
+ * VITE_SPA_CLIENT_ID to the prod registration and then checks the bundle, so a
+ * prod build cannot silently sign users in through the dev registration. The
+ * fallback is the dev registration so `npm run dev` and dev deploys need no
+ * configuration. IDs are public identifiers, not credentials.
+ */
+const DEV_SPA_CLIENT_ID = "212f8c25-c2f7-4e09-a316-280dd4c89e73";
+export const SPA_CLIENT_ID =
+  import.meta.env.VITE_SPA_CLIENT_ID || DEV_SPA_CLIENT_ID;
 
 /** SecureShare SharePoint site (Graph composite ID). */
 export const SITE_ID =
@@ -65,28 +78,45 @@ export const msalConfig: Configuration = {
 };
 
 /**
- * Scopes requested at sign-in.
+ * Delegated Graph scopes. One list for sign-in and for silent acquisition, so
+ * the two cannot drift apart.
  *
- * These are DELEGATED Graph permissions — broad-sounding, but each call is
- * made as the signed-in user and SharePoint trims the results to that user's
- * ACLs. A user who cannot see a folder gets nothing back for it.
+ * Every call is made AS the signed-in user, and SharePoint trims results to
+ * that user's ACLs, so broad-sounding names do not grant broad reach here.
+ *
+ *   User.Read             — sign-in and the user's own profile
+ *   User.ReadBasic.All +
+ *   GroupMember.Read.All  — the least-privileged pair Microsoft documents for
+ *                           POST /me/getMemberGroups (auth-context.tsx). This
+ *                           replaced GroupMember.ReadWrite.All on 13 Oct 2026:
+ *                           the SPA only reads memberships; writes belong to
+ *                           the Functions API (WS3).
+ *   Sites.Read.All        — resolve the SecureShare site
+ *   Files.ReadWrite.All   — browse, upload, download in the library
+ *
+ * Every scope here must be granted, with admin consent, on whichever SPA
+ * registration the build uses (see SPA_CLIENT_ID). A scope requested here but
+ * not granted there fails sign-in for every non-admin user.
  */
+const GRAPH_SCOPES = [
+  "User.Read",
+  "User.ReadBasic.All",
+  "GroupMember.Read.All",
+  "Sites.Read.All",
+  "Files.ReadWrite.All",
+];
+
 export const loginRequest: PopupRequest = {
   // Always show the account picker rather than silently reusing whichever
   // account is cached. Without this, switching between an admin and a scoped
   // user means clearing site data between sign-ins.
   prompt: "select_account",
-  scopes: [
-  "User.Read",
-  "Sites.Read.All",
-  "Files.ReadWrite.All",
-  "GroupMember.ReadWrite.All",
-  ],
+  scopes: GRAPH_SCOPES,
 };
 
 /** Scopes for silent token acquisition before each Graph call. */
 export const graphRequest = {
-  scopes: ["User.Read", "Sites.Read.All", "Files.ReadWrite.All", "GroupMember.ReadWrite.All"],
+  scopes: GRAPH_SCOPES,
 };
 
 export const GRAPH_BASE = "https://graph.microsoft.com/v1.0";

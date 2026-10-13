@@ -71,6 +71,19 @@ jobs:
         env:
           VITE_DEMO_MODE: ""
           VITE_INCLUDE_ADMIN_DOCS: "false"
+          VITE_SPA_CLIENT_ID: d25ef5a7-5e7a-4ebf-a06e-f3cbf047294d   # cs-secure-share-prod-spa
+
+      # The SPA client ID falls back to the DEV registration when the variable
+      # is missing. That fallback is right for local work and wrong here, so
+      # prove the bundle carries the prod ID and not the dev one.
+      - name: Bundle uses the prod app registration
+        run: |
+          grep -q "d25ef5a7-5e7a-4ebf-a06e-f3cbf047294d" dist/assets/*.js \
+            || { echo "::error::Prod SPA client ID not found in the bundle."; exit 1; }
+          if grep -q "212f8c25-c2f7-4e09-a316-280dd4c89e73" dist/assets/*.js; then
+            echo "::error::Dev SPA client ID found in the prod bundle."; exit 1
+          fi
+          echo "OK: bundle signs in through cs-secure-share-prod-spa."
 
       # Disclosure gate. The admin documentation pages name internal security
       # tooling, the NIST control inventory and the break-glass procedure. They

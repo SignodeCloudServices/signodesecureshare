@@ -23,7 +23,11 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # Dev builds sign in through the dev SPA registration. Stated explicitly
+      # even though it is also the fallback in auth-config.ts.
       - run: npm run build
+        env:
+          VITE_SPA_CLIENT_ID: 212f8c25-c2f7-4e09-a316-280dd4c89e73
       - uses: actions/upload-artifact@v4
         with:
           name: spa-dist
@@ -48,9 +52,14 @@ jobs:
           app_location: "dist"
           skip_app_build: true
 
+      # Dev is secureshare-dev-swa (Free tier, created 13 Oct 2026) — no longer
+      # the live portal, which is secureshare-swa and deploys only through
+      # deploy-prod.yml. DEV_URL on the dev environment overrides the default.
       - name: Smoke test
+        env:
+          DEV_URL: ${{ vars.DEV_URL || 'https://calm-smoke-01ee89410.2.azurestaticapps.net' }}
         run: |
           sleep 30
-          code=$(curl -s -o /dev/null -w "%{http_code}" https://secureshare.pkgconnect.com)
-          echo "Portal returned $code"
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$DEV_URL")
+          echo "Dev portal at $DEV_URL returned $code"
           test "$code" = "200"

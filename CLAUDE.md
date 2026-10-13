@@ -335,17 +335,20 @@ docs never ship to the internet. Fix the build, not the pattern.
 
 These cannot be set from a workflow file. Status as of 13 Oct 2026:
 
-- [ ] **Ruleset `MainBranch` targets `main`.** It exists and is active but its target
-      list was empty, so it enforced nothing. Add target → *Include default branch*.
-      It requires 1 approval with no bypass; as the only engineer Grant cannot merge his
-      own PRs, so set approvals to 0 or add repository admins as a bypass actor.
+- [x] **Ruleset `MainBranch`** targets the default branch (`main`): PR required
+      (0 approvals while Grant is the only engineer; raise to 1 when a second joins),
+      `build` check required, no deletion, no force-push.
 - [x] Environments `dev` and `prod` created.
-- [ ] **`prod` protection**: required reviewers (Grant + one other), deployment branches
-      and tags limited to `main` and `v*`.
+- [x] **`prod` required reviewers**: Grant (add a second reviewer when one exists), 10-minute
+      wait timer.
+- [ ] **`prod` deployment branches and tags**: currently *No restriction*. Set to
+      *Selected branches and tags*: branch `main`, tag `v*`.
+- [ ] **`prod` admin bypass**: *Allow administrators to bypass* is on, so the approval gate
+      is optional for admins. Turn it off; Grant is a reviewer and can still approve.
 - [ ] **`dev` secret** `SWA_DEPLOYMENT_TOKEN_DEV` → token of `secureshare-dev-swa`. It
       previously held `secureshare-swa`'s token; until it is replaced, merges to `main`
       still deploy to the live portal.
-- [ ] **`prod` secret** `SWA_DEPLOYMENT_TOKEN_PROD` → token of `secureshare-swa`.
+- [x] **`prod` secret** `SWA_DEPLOYMENT_TOKEN_PROD` → token of `secureshare-swa`.
 - [ ] **Environment variable** `PROD_URL` on `prod` — `https://secureshare.signode.com`
       after the WS2.2 cutover; the SWA default hostname until then.
 - [ ] **Federated credential** for the `prod` environment on `cs-secure-share-github-deploy`

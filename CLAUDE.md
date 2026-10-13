@@ -322,8 +322,10 @@ docs never ship to the internet. Fix the build, not the pattern.
 
 These cannot be set from a workflow file. Status as of 13 Oct 2026:
 
-- [x] Branch protection on `main`: PR required, `build` check (CI) required, no force-push,
-      no deletion.
+- [ ] **Branch protection on `main`** (Settings → Branches): require a pull request,
+      require the `build` status check (from `ci.yml`) with branches up to date, block
+      force-push and deletion. Approvals: 0 while Grant is the only engineer, 1 once a
+      second engineer joins.
 - [ ] **Environment `prod`** (Settings → Environments): required reviewers (Grant + one
       other), deployment branches and tags limited to `main` and `v*`.
 - [ ] **Environment secret** `SWA_DEPLOYMENT_TOKEN_PROD` on `prod` — from the prod Static

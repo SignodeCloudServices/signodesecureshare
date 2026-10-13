@@ -18,6 +18,15 @@ sat on `feat/msal-auth`.
 **Production is gated (added 13 Oct 2026).** `main` deploys to **dev** only. Production
 deploys only through `deploy-prod.yml` — see *Release process* below.
 
+| | Static Web App | Tier | URL | SPA registration |
+|---|---|---|---|---|
+| dev | `secureshare-dev-swa` | Free | `calm-smoke-01ee89410.2.azurestaticapps.net` | `cs-secure-share-dev-spa` `212f8c25-…` |
+| prod | `secureshare-swa` | Standard | `secureshare.pkgconnect.com` → `secureshare.signode.com` (WS2.2) | `cs-secure-share-prod-spa` `d25ef5a7-…` |
+
+Both SWAs use deployment source **Other**: GitHub is not linked from the Azure side, so
+Azure never commits its own workflow or repo-wide token. The SPA client ID is chosen at
+build time (`VITE_SPA_CLIENT_ID`, see `auth-config.ts`).
+
 ---
 
 ## Ratified decisions — do not contradict these
@@ -63,10 +72,14 @@ of these, stop and ask rather than implementing around it.
 - **Do not rely on client-side scope checks for security.** `isPathInScope` and
   `scopedPaths` decide what the UI *renders*. Graph and SharePoint decide what the user
   can actually read, independently.
-- **Do not grant app-only Graph permissions to the SPA registration.** They are inert on
-  a public client and declare tenant-wide reach. All four Graph permissions on
-  `cs-secure-share-dev-spa` must be **Delegated**. This was got wrong once; check the
-  Type column after any permission change.
+- **Do not grant app-only Graph permissions to the SPA registrations.** They are inert on
+  a public client and declare tenant-wide reach. Every Graph permission on
+  `cs-secure-share-dev-spa` and `cs-secure-share-prod-spa` must be **Delegated**, and must
+  match `GRAPH_SCOPES` in `auth-config.ts` exactly: `User.Read`, `User.ReadBasic.All`,
+  `GroupMember.Read.All`, `Sites.Read.All`, `Files.ReadWrite.All`, all admin-consented.
+  This was got wrong once; check the Type column after any permission change.
+- **Do not put `GroupMember.ReadWrite.All` back on an SPA registration.** Removed 13 Oct
+  2026. The SPA only reads memberships; membership writes belong to the Functions API.
 - **Do not commit secrets or client secrets.** The repo is public. Tenant, client, site
   and drive IDs are public identifiers and are committed deliberately — they are not
   credentials.
@@ -306,8 +319,8 @@ presentation.
 | Workflow | Trigger | Target | Gate |
 |---|---|---|---|
 | `ci.yml` | Pull request to `main` | — | lint, runtime `npm audit` (high+), build |
-| `deploy-dev.yml` | Push to `main` | dev SWA | none |
-| `deploy-prod.yml` | Tag `v*`, or manual run | prod SWA | commit must be on `main`; lint, audit, build, bundle-disclosure check; **`prod` environment approval** |
+| `deploy-dev.yml` | Push to `main` | `secureshare-dev-swa` | none |
+| `deploy-prod.yml` | Tag `v*`, or manual run | `secureshare-swa` | commit must be on `main`; lint, audit, build, bundle-disclosure check, prod client ID check; **`prod` environment approval** |
 
 To release: merge to `main` through a PR, confirm dev, then `git tag v1.0.0 && git push
 origin v1.0.0` (or run *Deploy - prod* from the Actions tab), and approve the `prod`
@@ -322,16 +335,28 @@ docs never ship to the internet. Fix the build, not the pattern.
 
 These cannot be set from a workflow file. Status as of 13 Oct 2026:
 
-- [ ] **Branch protection on `main`** (Settings → Branches): require a pull request,
-      require the `build` status check (from `ci.yml`) with branches up to date, block
-      force-push and deletion. Approvals: 0 while Grant is the only engineer, 1 once a
-      second engineer joins.
-- [ ] **Environment `prod`** (Settings → Environments): required reviewers (Grant + one
-      other), deployment branches and tags limited to `main` and `v*`.
-- [ ] **Environment secret** `SWA_DEPLOYMENT_TOKEN_PROD` on `prod` — from the prod Static
-      Web App once WS1.1 creates it.
-- [ ] **Environment variable** `PROD_URL` on `prod` — `https://secureshare.signode.com`
-      after the WS2.2 cutover; the SWA default hostname until then.
+- [x] **Ruleset `MainBranch`** targets the default branch (`main`): PR required
+      (0 approvals while Grant is the only engineer; raise to 1 when a second joins),
+      `build` check required, no deletion, no force-push.
+- [x] Environments `dev` and `prod` created.
+- [x] **`prod` required reviewers**: Grant (add a second reviewer when one exists), 10-minute
+      wait timer.
+- [x] **`prod` deployment branches and tags**: branch `main`, tag `v*`.
+- [x] **`prod` admin bypass** off: the approval gate applies to admins too.
+- [x] **`dev` secret** `SWA_DEPLOYMENT_TOKEN_DEV` → token of `secureshare-dev-swa` (reset
+      13 Oct after briefly being stored as a plain variable).
+- [x] **`prod` secret** `SWA_DEPLOYMENT_TOKEN_PROD` → token of `secureshare-swa`.
+- [x] **Environment variable** `PROD_URL` on `prod` = `https://secureshare.pkgconnect.com`;
+      change to `https://secureshare.signode.com` at the WS2.2 cutover.
+
+### Redirect URIs (platform **Single-page application**, exact origin, no trailing slash)
+
+| Registration | URIs | Notes |
+|---|---|---|
+| `cs-secure-share-dev-spa` | `https://calm-smoke-01ee89410.2.azurestaticapps.net`, `https://secureshare.pkgconnect.com` | Remove the pkgconnect URI after the first prod release; until then the live portal still runs a dev-registration build |
+| `cs-secure-share-prod-spa` | `https://secureshare.pkgconnect.com` | Add `https://secureshare.signode.com` at the WS2.2 cutover |
+
+A URI under the **Web** platform fails with `AADSTS9002326`; a missing one with `AADSTS50011`.
 - [ ] **Federated credential** for the `prod` environment on `cs-secure-share-github-deploy`
       (subject `repo:SignodeCloudServices/signodesecureshare:environment:prod`), needed
       only when infrastructure steps are added.

@@ -152,10 +152,13 @@ jobs:
       # The Front Door ID is not a secret (it is in CLAUDE.md, in a public repo).
       # Front Door overwrites X-Azure-FDID with the true profile ID, so another
       # Front Door profile cannot spoof it — but a client talking DIRECTLY to
-      # the *.azurestaticapps.net origin can send any header it likes. The
-      # header check is only complete together with
-      # networking.allowedIpRanges = ["AzureFrontDoor.Backend"] (to be added
-      # once the header lock is proven; see "Diagnose origin lock").
+      # the *.azurestaticapps.net origin can send any header it likes. So the
+      # lock is two layers, both from Microsoft's Front Door + SWA guidance:
+      #   networking.allowedIpRanges = ["AzureFrontDoor.Backend"]
+      #       only Front Door's egress IPs reach the origin at all (service
+      #       tag, shared by all Front Door customers), and
+      #   forwardingGateway.requiredHeaders X-Azure-FDID
+      #       of those, only Signode's profile is accepted.
       # -----------------------------------------------------------------------
       - name: Front Door origin lock
         env:
@@ -191,10 +194,11 @@ jobs:
           fi
           host="${PROD_URL#https://}"; host="${host%%/*}"
           jq --arg fdid "$fdid" --arg host "$host" \
-             '.forwardingGateway = {requiredHeaders: {"X-Azure-FDID": $fdid}, allowedForwardedHosts: [$host]}' \
+             '.forwardingGateway = {requiredHeaders: {"X-Azure-FDID": $fdid}, allowedForwardedHosts: [$host]}
+              | .networking.allowedIpRanges = ["AzureFrontDoor.Backend"]' \
              dist/staticwebapp.config.json > config.tmp && mv config.tmp dist/staticwebapp.config.json
           echo "Origin lock ON: Front Door $fdid, host $host"
-          jq .forwardingGateway dist/staticwebapp.config.json
+          jq '{forwardingGateway, networking}' dist/staticwebapp.config.json
 
       - name: Deploy to Static Web Apps (prod)
         uses: Azure/static-web-apps-deploy@v1
@@ -247,8 +251,10 @@ jobs:
       #   C  FDID only                       -> does a missing forwarded host block?
       #   D  FDID + X-Forwarded-Host=*.azurefd.net
       # Plus the response headers Front Door returns for PROD_URL (x-cache shows
-      # a cached 403). This works only while networking.allowedIpRanges is NOT
-      # set; once it is, direct probes from a runner are refused by IP first.
+      # a cached 403). With networking.allowedIpRanges on, the runner is not a
+      # Front Door IP, so B-D also return 403: that is the IP layer working,
+      # and the probes then only tell you the lock is active. To isolate the
+      # header layer again, temporarily drop the allowedIpRanges line above.
       # -----------------------------------------------------------------------
       - name: Diagnose origin lock
         if: ${{ failure() && steps.smoke.outcome == 'failure' && vars.AFD_FDID != '' && vars.PROD_ORIGIN_URL != '' }}

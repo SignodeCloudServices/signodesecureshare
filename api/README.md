@@ -44,7 +44,9 @@ The constants and the scope registry are imported from the portal's own
 | Records | **Storage Table Data Contributor** on the storage account | — |
 
 Never put internal region or department groups in the administrative unit:
-that would let the API add a guest to them.
+that would let the API add a guest to them. The unit is `SecureShare Guest Groups`
+(`3fc4d890-3c9c-488c-ba21-f04a8a3c8138`); every new External partner group must be
+added to it (see CLAUDE.md, "A new guest-eligible partner folder").
 
 ## App settings
 

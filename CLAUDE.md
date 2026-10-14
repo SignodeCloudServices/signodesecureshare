@@ -156,6 +156,16 @@ user, against a cap of roughly 150–200.
 Creating a new partner group means doing both. Skipping the second produces an error that
 reads like a permissions problem.
 
+**A new guest-eligible (External) partner folder needs four things**, or one part of the
+flow fails in a way that points somewhere else:
+1. Folder under an `/External/` container, inheritance broken, its Entra group granted (RB-15).
+2. The group assigned to `cs-secure-share-prod-spa` (else `AADSTS50105` at sign-in).
+3. The group added to the **`SecureShare Guest Groups`** administrative unit (else the
+   invitation API gets a Graph 403 adding the guest — the invite is sent but no access granted).
+4. An entry in `EXTERNAL_SCOPES` in `folder-scopes.ts` with `guestEligible: true` (else the
+   API refuses the scope and the portal never offers it). Then name two Signode owners: they
+   are the folder's sponsors.
+
 ### Deployment identity (CI/CD)
 
 GitHub Actions authenticates to Azure with **OIDC federated credentials**, never a stored
@@ -214,7 +224,10 @@ with esbuild so it imports `src/lib/retention.ts` and `src/lib/folder-scopes.ts`
   permission and grants no directory access.
 - **The administrative unit for Groups Administrator holds only guest-eligible (External)
   groups.** Putting the 40 internal region/department groups in it would let the API add a
-  guest to them.
+  guest to them. AU: **`SecureShare Guest Groups`**, `3fc4d890-3c9c-488c-ba21-f04a8a3c8138`
+  (restricted management off), created 14 Oct 2026 with `SG-SecureShare-EXT-POC_Partner_A`
+  and `_B`. The `secureshare-api` identity holds **Guest Inviter** (tenant, active, permanent)
+  and **Groups Administrator** scoped to this AU only.
 - The server-side checks are unit-tested (`api/test`, run in CI's `build` job). A failing
   test there is a security regression, not a flaky test.
 - Guest objects are not deleted by the expiry sweep (needs a broader role); membership is

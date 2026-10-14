@@ -31,6 +31,32 @@ jobs:
             package-lock.json
             api/package-lock.json
 
+      # ---- Invitation API (api/) -------------------------------------------
+      # Same job, not a separate one, so the existing required `build` check
+      # in the MainBranch ruleset covers the API with no settings change.
+      # Runs BEFORE the portal's `npm ci` on purpose: the API must build and
+      # test with only its own dependencies, exactly as deploy-api.yml does.
+      # With the portal's node_modules present, a dependency leak (vitest
+      # loading the root postcss/tailwind config) passed CI and failed
+      # Deploy - API #1.
+      # The unit tests are the server-side checks of runbook WS3.3 and the
+      # token validation; a red test here is a security regression.
+      - name: API — install
+        working-directory: api
+        run: npm ci
+
+      - name: API — audit runtime dependencies
+        working-directory: api
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: API — typecheck, unit tests, bundle
+        working-directory: api
+        run: |
+          npm run typecheck
+          npm test
+          npm run build
+          test -f dist/index.js
+
       # Lockfile-exact install. Fails if package.json and the lockfile
       # disagree - which is what you want.
       - run: npm ci
@@ -79,24 +105,3 @@ jobs:
             exit 1
           fi
           echo "OK: no internal documentation markers in dist/."
-
-      # ---- Invitation API (api/) -------------------------------------------
-      # Same job, not a separate one, so the existing required `build` check
-      # in the MainBranch ruleset covers the API with no settings change.
-      # The unit tests are the server-side checks of runbook WS3.3 and the
-      # token validation; a red test here is a security regression.
-      - name: API — install
-        working-directory: api
-        run: npm ci
-
-      - name: API — audit runtime dependencies
-        working-directory: api
-        run: npm audit --omit=dev --audit-level=high
-
-      - name: API — typecheck, unit tests, bundle
-        working-directory: api
-        run: |
-          npm run typecheck
-          npm test
-          npm run build
-          test -f dist/index.js

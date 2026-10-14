@@ -33,7 +33,7 @@ jobs:
   guard:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Commit must be on main
@@ -49,9 +49,11 @@ jobs:
       run:
         working-directory: api
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
+          # Matches the Function App runtime (Node 22 on Flex Consumption,
+          # supported to April 2027). Move both together.
           node-version: 22
           cache: npm
           cache-dependency-path: api/package-lock.json
@@ -70,7 +72,7 @@ jobs:
           cp -r dist host.json package.json ../api-package/
           ls -la ../api-package ../api-package/dist
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: api-package
           path: api-package/
@@ -80,12 +82,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: prod
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: api-package
           path: api-package/
 
-      - uses: azure/login@v2
+      - uses: azure/login@v3
         with:
           client-id: ${{ env.AZURE_CLIENT_ID }}
           tenant-id: ${{ env.AZURE_TENANT_ID }}

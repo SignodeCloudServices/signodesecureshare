@@ -31,7 +31,7 @@ jobs:
   guard:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0   # full history, so merge-base can see main
 
@@ -49,10 +49,10 @@ jobs:
     needs: guard
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run lint
@@ -111,7 +111,7 @@ jobs:
           test -f dist/staticwebapp.config.json || { echo "::error::dist/staticwebapp.config.json missing — it must live in public/"; exit 1; }
           python3 -m json.tool dist/staticwebapp.config.json >/dev/null
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: spa-dist-prod
           path: dist/
@@ -123,7 +123,7 @@ jobs:
     # here until a reviewer approves in the Actions UI.
     environment: prod
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: spa-dist-prod
           path: dist/

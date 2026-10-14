@@ -18,14 +18,14 @@ jobs:
 
     steps:
       # Clone the repo onto the runner. Nothing works without this.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      # Install Node 20 and enable npm's dependency cache, keyed on the
-      # lockfile. Unchanged dependencies restore from cache instead of
+      # Install Node 24 (Active LTS; Node 20 reached end of life in April 2026)
+      # and enable npm's dependency cache, keyed on the lockfile. Unchanged dependencies restore from cache instead of
       # downloading 267 packages again.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: |
             package-lock.json

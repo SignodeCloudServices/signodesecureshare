@@ -1,7 +1,7 @@
 name: Deploy - API
 
-# The invitation API (api/) to the SecureSharePortal Function App (Flex
-# Consumption, secureshare-dev-rg). One Function App serves both portals, so
+# The invitation API (api/) to the secureshare-api Function App (Flex
+# Consumption, Node 22, secureshare-dev-rg). One Function App serves both portals, so
 # this deploys like production: tag v* or manual run, commit must be on main,
 # and the `prod` environment approval gates it. See api/README.md.
 #
@@ -23,7 +23,7 @@ permissions:
   contents: read
 
 env:
-  FUNCTION_APP: SecureSharePortal
+  FUNCTION_APP: secureshare-api
   # Public identifiers, committed deliberately (see CLAUDE.md).
   AZURE_CLIENT_ID: 94f1ea9a-b6cb-4236-9c02-c333a3e549d0        # cs-secure-share-github-deploy
   AZURE_TENANT_ID: 7db30361-ce9f-4244-8d28-60553bffff38

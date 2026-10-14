@@ -57,7 +57,9 @@ list admits nobody.
 
 `.github/workflows/deploy-api.yml`: tag `v*` or manual run, `prod` approval,
 OIDC as `cs-secure-share-github-deploy` (needs its `prod` federated credential
-and **Website Contributor** on `SecureSharePortal`). One Function App serves
+and **Website Contributor** on `secureshare-api`, the dedicated Flex app whose
+identity holds the grants below — not `SecureSharePortal`, whose identity holds
+`Sites.Selected` and must not also get directory rights). One Function App serves
 both portals; its token audience is `cs-secure-share-prod-api`, and both SPA
 registrations request that API's `Invitations.ReadWrite` scope.
 

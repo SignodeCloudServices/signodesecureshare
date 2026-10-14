@@ -200,6 +200,12 @@ with esbuild so it imports `src/lib/retention.ts` and `src/lib/folder-scopes.ts`
 - **No on-behalf-of for invitations.** The API validates the user's token (who is asking),
   then calls Graph as the Function App's **managed identity**. OBO is needed only when file
   traffic moves behind the API.
+- **Runs on its own Function App, `secureshare-api`** (Flex, Node 22), created 14 Oct 2026.
+  Two identities, two narrow grants: the `secureshare-api` identity holds the directory
+  grants (invite guests, manage the guest groups) and **no SharePoint access**; the
+  `SecureSharePortal` identity `cc0b2c45-…` keeps `Sites.Selected` for the later file API and
+  holds **no directory write**. Do not merge them. `SecureSharePortal` itself is .NET 10 with
+  leftover AI-template settings and no functions; nothing deploys to it.
 - **The SPA requests one non-Graph scope:** `api://<api client id>/Invitations.ReadWrite`.
   This is the only exception to "SPA permissions match `GRAPH_SCOPES`"; it is not a Graph
   permission and grants no directory access.
@@ -384,7 +390,7 @@ the record got flipped on 14 Oct. Verify from outside the network:
 |---|---|---|---|
 | `ci.yml` | Pull request to `main` | — | lint, runtime `npm audit` (high+), build |
 | `deploy-dev.yml` | Push to `main` | `secureshare-dev-swa` | none |
-| `deploy-api.yml` | Tag `v*`, or manual run | Function App `SecureSharePortal` (Flex) | commit on `main`; audit, typecheck, unit tests, bundle; **`prod` environment approval**; OIDC via the `prod` federated credential |
+| `deploy-api.yml` | Tag `v*`, or manual run | Function App `secureshare-api` (Flex, Node 22) | commit on `main`; audit, typecheck, unit tests, bundle; **`prod` environment approval**; OIDC via the `prod` federated credential |
 | `deploy-prod.yml` | Tag `v*`, or manual run | `secureshare-swa` | commit must be on `main`; lint, audit, build, bundle-disclosure check, prod client ID check; **`prod` environment approval** |
 
 To release: merge to `main` through a PR, confirm dev, then `git tag v1.0.0 && git push

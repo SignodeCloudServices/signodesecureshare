@@ -1,0 +1,17 @@
+{
+  // Type-check only; esbuild (build.mjs) emits the bundle. The API imports
+  // the portal's own constants from ../src/lib so the invitation limits and
+  // the guest-eligible scope list cannot drift between UI and server.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "noEmit": true
+  },
+  "include": ["src", "test", "../src/lib/retention.ts", "../src/lib/folder-scopes.ts"]
+}

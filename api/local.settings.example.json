@@ -1,0 +1,21 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+
+    "TENANT_ID": "7db30361-ce9f-4244-8d28-60553bffff38",
+    "API_AUDIENCES": "api://<cs-secure-share-dev-api client id>,<cs-secure-share-dev-api client id>",
+    "REQUIRED_SCOPE": "Invitations.ReadWrite",
+    "ADMIN_GROUP_IDS": "389d5c85-73f2-47dd-8f61-1b916dae4e3e",
+
+    "INVITE_REDIRECT_URL": "https://calm-smoke-01ee89410.2.azurestaticapps.net",
+    "INTERNAL_DOMAINS": "signode.com,pkgconnect.com",
+    "DOMAIN_POLICY_MODE": "block",
+    "DOMAIN_POLICY_LIST": "",
+    "EXPIRY_CLOCK": "redemption",
+
+    "INVITATIONS_TABLE_URL": "https://<storage account>.table.core.windows.net",
+    "INVITATIONS_TABLE_NAME": "invitations"
+  }
+}

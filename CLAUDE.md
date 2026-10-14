@@ -194,6 +194,23 @@ CSPRNG, single-use and revocable is satisfied by there being no token; keep the 
 guard against anyone reintroducing one. What the portal stores is an invitation *record*
 (who, whom, which scope, until when) for audit and revocation — metadata, not a credential.
 
+**Built in `api/` (WS3, from 14 Oct 2026)** — TypeScript on Node 22, Functions v4, bundled
+with esbuild so it imports `src/lib/retention.ts` and `src/lib/folder-scopes.ts` directly
+(one source for limits and eligible scopes). See `api/README.md`.
+- **No on-behalf-of for invitations.** The API validates the user's token (who is asking),
+  then calls Graph as the Function App's **managed identity**. OBO is needed only when file
+  traffic moves behind the API.
+- **The SPA requests one non-Graph scope:** `api://<api client id>/Invitations.ReadWrite`.
+  This is the only exception to "SPA permissions match `GRAPH_SCOPES`"; it is not a Graph
+  permission and grants no directory access.
+- **The administrative unit for Groups Administrator holds only guest-eligible (External)
+  groups.** Putting the 40 internal region/department groups in it would let the API add a
+  guest to them.
+- The server-side checks are unit-tested (`api/test`, run in CI's `build` job). A failing
+  test there is a security regression, not a flaky test.
+- Guest objects are not deleted by the expiry sweep (needs a broader role); membership is
+  removed and quarterly access reviews clean up guests.
+
 Copy that told users to "use the Send Invitation button" was corrected on `LiveHomePage`
 and `HelpPage` at the same time. If that button is ever restored, those two need revisiting
 together — they are the surfaces that describe it.
@@ -262,7 +279,7 @@ presentation.
 - `@tanstack/react-query` is declared but no `QueryClientProvider` exists. Keep it — it
   is the right choice for caching Graph calls. Wire it when the data layer grows.
 - `README.md` is UTF-16LE and contains only the repo name.
-- No tests.
+- No tests for the SPA. The API (`api/`) has unit tests for its checks and token validation.
 
 **Infrastructure**
 - **There is no IaC in this repository.** `main.bicep` and `network.bicep` exist only in

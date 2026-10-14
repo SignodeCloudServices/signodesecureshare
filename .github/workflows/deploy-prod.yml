@@ -157,15 +157,28 @@ jobs:
           AFD_FDID: ${{ vars.AFD_FDID }}
           PROD_URL: ${{ vars.PROD_URL }}
         run: |
+          # Keep an unlocked copy of the build. If the locked site fails the
+          # smoke test, the rollback step below redeploys this copy.
+          cp -r dist dist-unlocked
           if [ -z "$AFD_FDID" ]; then
             echo "::warning::AFD_FDID not set — origin lock OFF. The Static Web App is reachable without Front Door."
             exit 0
           fi
+          # SWA compares X-Azure-FDID case-sensitively and byte-for-byte. A
+          # pasted space, newline or quote takes the whole site down with a 403
+          # (14 Oct 2026). Strip them, then refuse anything that is not a GUID
+          # BEFORE deploying.
+          fdid=$(printf '%s' "$AFD_FDID" | tr -d '[:space:]"'"'"'')
+          if ! printf '%s' "$fdid" | grep -Eq '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'; then
+            echo "::error::AFD_FDID is not a lowercase GUID after trimming (got ${#fdid} chars). Copy the Front Door ID from the profile's Overview blade."
+            exit 1
+          fi
+          [ "$fdid" = "$AFD_FDID" ] || echo "::warning::AFD_FDID contained whitespace or quotes; they were stripped. Fix the variable."
           host="${PROD_URL#https://}"; host="${host%%/*}"
-          jq --arg fdid "$AFD_FDID" --arg host "$host" \
+          jq --arg fdid "$fdid" --arg host "$host" \
              '.forwardingGateway = {requiredHeaders: {"X-Azure-FDID": $fdid}, allowedForwardedHosts: [$host]}' \
              dist/staticwebapp.config.json > config.tmp && mv config.tmp dist/staticwebapp.config.json
-          echo "Origin lock ON: Front Door $AFD_FDID, host $host"
+          echo "Origin lock ON: Front Door $fdid, host $host"
           jq .forwardingGateway dist/staticwebapp.config.json
 
       - name: Deploy to Static Web Apps (prod)
@@ -179,6 +192,7 @@ jobs:
       # PROD_URL is an environment variable, not a hard-coded hostname, so the
       # cutover to secureshare.signode.com (WS2.2) is a settings change.
       - name: Smoke test
+        id: smoke
         env:
           PROD_URL: ${{ vars.PROD_URL }}
         # Retry for up to 5 minutes. A new staticwebapp.config.json (for example
@@ -206,3 +220,26 @@ jobs:
           code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$ORIGIN")
           echo "Direct origin $ORIGIN returned $code"
           test "$code" = "403" || { echo "::error::Origin answered $code without Front Door — the lock is not effective."; exit 1; }
+
+      # -----------------------------------------------------------------------
+      # Automatic rollback of the origin lock.
+      # If the smoke test fails while the lock is on, redeploy the same build
+      # WITHOUT forwardingGateway so the portal comes back immediately, then
+      # still fail the run so the problem is visible. Added after the 14 Oct
+      # 2026 release where a lock mismatch returned 403 to every visitor and
+      # recovery needed a second gated release.
+      # -----------------------------------------------------------------------
+      - name: Roll back origin lock (redeploy unlocked build)
+        if: ${{ failure() && steps.smoke.outcome == 'failure' && vars.AFD_FDID != '' }}
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.SWA_DEPLOYMENT_TOKEN_PROD }}
+          action: upload
+          app_location: "dist-unlocked"
+          skip_app_build: true
+
+      - name: Report rollback
+        if: ${{ failure() && steps.smoke.outcome == 'failure' && vars.AFD_FDID != '' }}
+        run: |
+          echo "::error::Smoke test failed with the origin lock ON. The unlocked build was redeployed so the portal stays up. Check that AFD_FDID exactly equals the Front Door ID on the profile Overview blade, then unset it until fixed."
+          exit 1

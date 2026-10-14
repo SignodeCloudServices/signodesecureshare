@@ -201,6 +201,9 @@ with esbuild so it imports `src/lib/retention.ts` and `src/lib/folder-scopes.ts`
   then calls Graph as the Function App's **managed identity**. OBO is needed only when file
   traffic moves behind the API.
 - **Runs on its own Function App, `secureshare-api`** (Flex, Node 22), created 14 Oct 2026.
+  Its identity is `11db5319-39bf-4623-a992-2ee6003a4802` (Graph app permissions
+  `GroupMember.Read.All`, `User.Read.All`, `User.RevokeSessions.All`; storage roles on
+  `securesharestorage143043`; keyless `AzureWebJobsStorage__accountName`).
   Two identities, two narrow grants: the `secureshare-api` identity holds the directory
   grants (invite guests, manage the guest groups) and **no SharePoint access**; the
   `SecureSharePortal` identity `cc0b2c45-…` keeps `Sites.Selected` for the later file API and
@@ -421,9 +424,9 @@ These cannot be set from a workflow file. Status as of 13 Oct 2026:
       `PROD_ORIGIN_URL` = `https://calm-pebble-011c41510.6.azurestaticapps.net`,
       `AFD_FDID` = `77d8904a-4a36-4e33-87da-b9001fa3decb` (origin lock on).
 
-- [ ] **Federated credential** for the `prod` environment on `cs-secure-share-github-deploy`
-      (subject `repo:SignodeCloudServices/signodesecureshare:environment:prod`), needed
-      only when infrastructure steps are added.
+- [x] **Federated credential** for the `prod` environment on `cs-secure-share-github-deploy`
+      (subject `repo:SignodeCloudServices/signodesecureshare:environment:prod`), created
+      14 Oct 2026 for `deploy-api.yml`, with **Website Contributor** on `secureshare-api` only.
 - [ ] **Repository visibility → private.** Check the org's GitHub plan first: on GitHub
       Free, branch protection and environment required reviewers are not available on
       private repositories, so going private would silently remove the gates above.

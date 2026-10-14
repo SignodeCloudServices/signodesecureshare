@@ -54,6 +54,14 @@ See `local.settings.example.json`. `EXPIRY_CLOCK` (D3) and
 decisions do not block the build. `DOMAIN_POLICY_MODE=allow` with an empty
 list admits nobody.
 
+## Deploy
+
+`.github/workflows/deploy-api.yml`: tag `v*` or manual run, `prod` approval,
+OIDC as `cs-secure-share-github-deploy` (needs its `prod` federated credential
+and **Website Contributor** on `SecureSharePortal`). One Function App serves
+both portals; its token audience is `cs-secure-share-prod-api`, and both SPA
+registrations request that API's `Invitations.ReadWrite` scope.
+
 ## Develop
 
 ```bash

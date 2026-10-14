@@ -1,0 +1,113 @@
+name: Deploy - API
+
+# The invitation API (api/) to the SecureSharePortal Function App (Flex
+# Consumption, secureshare-dev-rg). One Function App serves both portals, so
+# this deploys like production: tag v* or manual run, commit must be on main,
+# and the `prod` environment approval gates it. See api/README.md.
+#
+# Authenticates with OIDC (no secret — the repo is public) as
+# cs-secure-share-github-deploy, through its federated credential for the
+# `prod` environment. That identity needs Website Contributor on the Function
+# App only. App settings are managed in Azure, not here.
+on:
+  push:
+    tags: [ "v*" ]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
+permissions:
+  id-token: write   # OIDC for azure/login — without it login fails obscurely
+  contents: read
+
+env:
+  FUNCTION_APP: SecureSharePortal
+  # Public identifiers, committed deliberately (see CLAUDE.md).
+  AZURE_CLIENT_ID: 94f1ea9a-b6cb-4236-9c02-c333a3e549d0        # cs-secure-share-github-deploy
+  AZURE_TENANT_ID: 7db30361-ce9f-4244-8d28-60553bffff38
+  AZURE_SUBSCRIPTION_ID: bca9fe2c-159e-4cf8-8d8d-3c2cd3fb6107  # Infra-NA
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Commit must be on main
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
+            || { echo "::error::$GITHUB_SHA is not on main. Merge through a pull request first."; exit 1; }
+
+  build:
+    needs: guard
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      # The bundle carries every runtime dependency, so the package is just
+      # the bundle + host.json + package.json ("main" → dist/index.js). No
+      # node_modules, no remote build on the Function App.
+      - name: Assemble package
+        run: |
+          mkdir -p ../api-package
+          cp -r dist host.json package.json ../api-package/
+          ls -la ../api-package ../api-package/dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: api-package
+          path: api-package/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: api-package
+          path: api-package/
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Function App
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.FUNCTION_APP }}
+          package: api-package
+          sku: flexconsumption
+
+      # Liveness through the Function App's own hostname. Once the Front Door
+      # route and the Function App origin lock exist (WS2.4 item 2), this moves
+      # to https://secureshare.signode.com/api/health.
+      - name: Smoke test
+        run: |
+          host=$(az functionapp show -g secureshare-dev-rg -n "$FUNCTION_APP" --query defaultHostName -o tsv)
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "https://$host/api/health")
+            echo "Attempt $i: https://$host/api/health returned $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 10
+          done
+          echo "::error::API health check did not return 200 within 2 minutes."; exit 1

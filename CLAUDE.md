@@ -384,6 +384,7 @@ the record got flipped on 14 Oct. Verify from outside the network:
 |---|---|---|---|
 | `ci.yml` | Pull request to `main` | — | lint, runtime `npm audit` (high+), build |
 | `deploy-dev.yml` | Push to `main` | `secureshare-dev-swa` | none |
+| `deploy-api.yml` | Tag `v*`, or manual run | Function App `SecureSharePortal` (Flex) | commit on `main`; audit, typecheck, unit tests, bundle; **`prod` environment approval**; OIDC via the `prod` federated credential |
 | `deploy-prod.yml` | Tag `v*`, or manual run | `secureshare-swa` | commit must be on `main`; lint, audit, build, bundle-disclosure check, prod client ID check; **`prod` environment approval** |
 
 To release: merge to `main` through a PR, confirm dev, then `git tag v1.0.0 && git push

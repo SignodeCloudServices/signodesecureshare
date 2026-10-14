@@ -71,6 +71,10 @@ jobs:
         env:
           VITE_DEMO_MODE: ""
           VITE_INCLUDE_ADMIN_DOCS: "false"
+          # Invitation UI (WS3). Flip to "true" in a PR once the API is
+          # deployed and its grants are in place; until then the portal shows
+          # the pre-API copy and no Invitations page.
+          VITE_INVITATIONS_ENABLED: "false"
           VITE_SPA_CLIENT_ID: d25ef5a7-5e7a-4ebf-a06e-f3cbf047294d   # cs-secure-share-prod-spa
 
       # The SPA client ID falls back to the DEV registration when the variable

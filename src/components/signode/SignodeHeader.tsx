@@ -4,6 +4,7 @@ import { SendInvitationDialog } from "./SendInvitationDialog";
 import { usePersona } from "@/lib/persona-context";
 import { useAuth, DEMO_MODE } from "@/lib/auth-context";
 import { INCLUDE_ADMIN_DOCS } from "@/lib/admin-docs";
+import { useSponsorScopes } from "@/lib/invitations-api";
 
 type NavItem = {
   to: string;
@@ -43,9 +44,15 @@ export function SignodeHeader() {
   // user's Entra group membership.
   const isGlobalAdmin = DEMO_MODE ? persona.id === "global-admin" : isAdmin;
 
-  const visibleNav = NAV_ITEMS.filter(
-    (item) => !item.adminOnly || isGlobalAdmin
-  );
+  // Invitations appear for anyone the API says sponsors at least one
+  // external folder (admins get all of them). Empty for guests, in demo
+  // mode, and in builds without VITE_INVITATIONS_ENABLED.
+  const { scopes: sponsorScopes } = useSponsorScopes();
+
+  const visibleNav = [
+    ...NAV_ITEMS,
+    ...(sponsorScopes.length > 0 ? [{ to: "/invitations", label: "Invitations" }] : []),
+  ].filter((item: NavItem) => !item.adminOnly || isGlobalAdmin);
 
   return (
     <header className="signode-header-gradient border-b-4 border-[hsl(var(--signode-orange))] no-print sticky top-0 z-40">

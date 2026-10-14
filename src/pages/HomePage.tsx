@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { usePersona } from "@/lib/persona-context";
 import { canSendInvitations } from "@/lib/personas";
 import { useAuth, DEMO_MODE } from "@/lib/auth-context";
+import { INVITATIONS_ENABLED } from "@/lib/auth-config";
+import { useSponsorScopes } from "@/lib/invitations-api";
 import { FILE_RETENTION_DAYS } from "@/lib/retention";
 import { rootScopePaths } from "@/lib/folder-scopes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,6 +61,7 @@ const RECENT_ACTIVITY = [
  */
 function LiveHomePage() {
   const { displayName, scopedPaths, isAdmin, isAuthenticated } = useAuth();
+  const { scopes: sponsorScopes } = useSponsorScopes();
 
   if (!isAuthenticated) return null;
 
@@ -121,7 +124,24 @@ function LiveHomePage() {
         </div>
       </div>
 
-      {isAdmin && (
+      {INVITATIONS_ENABLED && sponsorScopes.length > 0 && (
+        <Card className="border-[hsl(var(--signode-orange))]/40 bg-[hsl(var(--signode-orange))]/5">
+          <CardContent className="p-4 flex items-center justify-between gap-4">
+            <div>
+              <div className="font-semibold text-[hsl(var(--signode-black))]">
+                Need to share with someone new?
+              </div>
+              {/* Revisit together with HelpPage's invitation FAQ (CLAUDE.md). */}
+              <div className="text-sm text-muted-foreground">
+                You sponsor {sponsorScopes.length === 1 ? "an external folder" : `${sponsorScopes.length} external folders`}.
+                Invite a partner from the <Link to="/invitations" className="underline">Invitations</Link> page.
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!INVITATIONS_ENABLED && isAdmin && (
         <Card className="border-[hsl(var(--signode-orange))]/40 bg-[hsl(var(--signode-orange))]/5">
           <CardContent className="p-4 flex items-center justify-between gap-4">
             <div>

@@ -11,6 +11,9 @@ import { HelpPage } from "@/pages/HelpPage";
 import { BrowsePage } from "@/pages/BrowsePage";
 import { UploadPage } from "@/pages/UploadPage";
 import { RecentPage } from "@/pages/RecentPage";
+import { InvitationsPage } from "@/pages/InvitationsPage";
+import { DEMO_MODE } from "@/lib/auth-context";
+import { INVITATIONS_ENABLED } from "@/lib/auth-config";
 
 // ---------------------------------------------------------------------------
 // Internal documentation routes — WS1.3. See src/lib/admin-docs.ts.
@@ -68,6 +71,10 @@ export default function App() {
         <Route path="/upload" element={<UploadPage />} />
         <Route path="/recent" element={<RecentPage />} />
         <Route path="/help" element={<HelpPage />} />
+        {/* Invitations: live builds with the API switched on only. The API
+            authorises every call itself; the page just presents it. Demo mode
+            keeps the old mock dialog and has no route here. */}
+        {INVITATIONS_ENABLED && !DEMO_MODE && <Route path="/invitations" element={<InvitationsPage />} />}
         {/* Internal documentation: present only in builds with
             VITE_INCLUDE_ADMIN_DOCS=true (local only). RequireAdmin still guards
             them there; in deployed builds they do not exist. */}

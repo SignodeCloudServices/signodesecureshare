@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Globe, HelpCircle, ShieldCheck, Upload, KeyRound } from "lucide-react";
+import { INVITATIONS_ENABLED } from "@/lib/auth-config";
 
 const FAQS = [
   {
@@ -12,7 +13,10 @@ const FAQS = [
   },
   {
     q: "How do I invite an external vendor to a folder?",
-    a: "Partner access is arranged internally: a Signode administrator has the partner added as a guest and granted the specific folder. Inviting from inside the portal is planned. External parties can never invite anyone.",
+    // Revisit together with LiveHomePage's invitation card (CLAUDE.md).
+    a: INVITATIONS_ENABLED
+      ? "The Signode sponsor (owner) of an external folder invites partners from the Invitations page. Microsoft emails the invitation, and the partner signs in with their own organization's account. Only external folders can be shared, and external parties can never invite anyone."
+      : "Partner access is arranged internally: a Signode administrator has the partner added as a guest and granted the specific folder. Inviting from inside the portal is planned. External parties can never invite anyone.",
   },
   {
     q: "What file types are blocked?",

@@ -17,10 +17,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci
       # Dev builds sign in through the dev SPA registration. Stated explicitly
@@ -28,7 +28,7 @@ jobs:
       - run: npm run build
         env:
           VITE_SPA_CLIENT_ID: 212f8c25-c2f7-4e09-a316-280dd4c89e73
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: spa-dist
           path: dist/
@@ -38,8 +38,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v7
         with:
           name: spa-dist
           path: dist/

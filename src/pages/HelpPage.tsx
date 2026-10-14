@@ -71,7 +71,10 @@ export function HelpPage() {
               <div className="text-xs uppercase tracking-wider text-muted-foreground">
                 Portal URL
               </div>
-              https://secureshare.pkgconnect.com
+              {/* The origin in the address bar, not a hard-coded hostname: the
+                  public name moves to secureshare.signode.com (WS2.2) and the
+                  internal pkgconnect.com domain is not advertised to partners. */}
+              {window.location.origin}
               <div className="text-xs text-muted-foreground mt-1">
                 Bookmark this — direct portal access
               </div>

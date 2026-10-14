@@ -85,7 +85,7 @@ function DemoSendInvitationDialog() {
       return;
     }
     const token = Math.random().toString(36).substring(2, 10);
-    const link = `https://secureshare.pkgconnect.com/invite/${token}`;
+    const link = `https://secureshare.signode.com/invite/${token}`;
     setSentLink(link);
     // Say "simulated" rather than "sent". Nothing is emailed, and the demo
     // sign-in gate labels its simulated steps the same way.

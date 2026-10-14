@@ -62,7 +62,7 @@ export function ArchitecturePage() {
             <ComponentTile
               icon={<Server className="h-5 w-5" />}
               title="Azure Static Web Apps"
-              detail="Hosts the React SPA at secureshare.pkgconnect.com. Global CDN, managed TLS, GitHub Actions deploy pipeline, staging slots for pre-prod validation."
+              detail="Hosts the React SPA at secureshare.signode.com. Global CDN, managed TLS, GitHub Actions deploy pipeline, staging slots for pre-prod validation."
             />
             <ComponentTile
               icon={<Activity className="h-5 w-5" />}
@@ -103,7 +103,7 @@ export function ArchitecturePage() {
             <FlowStep
               n={1}
               title="User authenticates"
-              body="User hits secureshare.pkgconnect.com and is redirected to Signode Entra ID — internal staff with their corporate account, external partners with their B2B guest account in the same tenant. Conditional Access requires FIDO2 or Authenticator MFA on every session start."
+              body="User hits secureshare.signode.com and is redirected to Signode Entra ID — internal staff with their corporate account, external partners with their B2B guest account in the same tenant. Conditional Access requires FIDO2 or Authenticator MFA on every session start."
             />
             <FlowStep
               n={2}

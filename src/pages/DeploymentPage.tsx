@@ -66,7 +66,7 @@ const STEPS = [
     n: 7,
     title: "Static Web App + custom domain",
     detail:
-      "Deploy the React SPA to Azure Static Web Apps via GitHub Actions. Attach the custom domain secureshare.pkgconnect.com. Enable staging slots.",
+      "Deploy the React SPA to Azure Static Web Apps via GitHub Actions. Attach the custom domain secureshare.signode.com. Enable staging slots.",
   },
   {
     n: 8,
@@ -121,7 +121,7 @@ const AZ_STEPS = [
     title: "Register the SPA + API app registrations in Entra",
     portal: "Entra admin center → Applications → App registrations → + New registration",
     detail:
-      "Two registrations: spa-secureshare (SPA redirect URI = https://secureshare.pkgconnect.com/auth/callback) and api-secureshare (expose an API + define scopes: Files.Read, Files.Write, Admin.All).",
+      "Two registrations: spa-secureshare (SPA redirect URI = https://secureshare.signode.com/auth/callback) and api-secureshare (expose an API + define scopes: Files.Read, Files.Write, Admin.All).",
     artifact:
       "appsettings.json in Function API — set TenantId, ClientId, Audience from the created app IDs.",
   },
@@ -214,7 +214,7 @@ const AZ_STEPS = [
     title: "Configure DNS",
     portal: "Your DNS provider → CNAME records",
     detail:
-      "secureshare.pkgconnect.com → CNAME → <swa-name>.azurestaticapps.net. Add TXT for domain verification when prompted by Static Web Apps.",
+      "secureshare.signode.com → CNAME → <swa-name>.azurestaticapps.net. Add TXT for domain verification when prompted by Static Web Apps.",
     artifact:
       "No code — record values are surfaced by the Static Web App portal blade after domain add.",
   },
@@ -233,7 +233,7 @@ const AZ_STEPS = [
     n: 13,
     icon: <CheckCircle2 className="h-4 w-4" />,
     title: "Verify: end-to-end smoke test",
-    portal: "https://secureshare.pkgconnect.com (in an incognito browser)",
+    portal: "https://secureshare.signode.com (in an incognito browser)",
     detail:
       "Sign in as each persona. Verify scope enforcement. Upload a test file. Confirm DLP scans, expiry badge appears, download works, audit event lands in Sentinel.",
     artifact:
@@ -385,7 +385,7 @@ export function DeploymentPage() {
           <p>
             The recommended production path hosts the React SPA on{" "}
             <strong>Azure Static Web Apps</strong> at{" "}
-            <code>secureshare.pkgconnect.com</code>, backed by a{" "}
+            <code>secureshare.signode.com</code>, backed by a{" "}
             <strong>.NET 8 Azure Function API</strong> that brokers all storage
             operations to a dedicated <strong>SharePoint Online</strong> site.
             Identity is handled by <strong>Entra ID</strong>, with external

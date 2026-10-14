@@ -179,6 +179,16 @@ jobs:
             exit 1
           fi
           [ "$fdid" = "$AFD_FDID" ] || echo "::warning::AFD_FDID contained whitespace or quotes; they were stripped. Fix the variable."
+          # Precondition: PROD_URL must actually be served THROUGH Front Door.
+          # Front Door stamps every response with x-azure-ref. If it is missing,
+          # the hostname reaches the SWA directly (DNS still pointing at the
+          # origin, or the domain still bound on the SWA), requests carry no
+          # X-Azure-FDID, and locking would 403 every visitor. That is what
+          # happened on 14 Oct 2026; refuse instead of deploying.
+          if ! curl -s -o /dev/null -D - --max-time 15 "$PROD_URL" | grep -qi '^x-azure-ref:'; then
+            echo "::error::$PROD_URL is not served through Front Door (no x-azure-ref header). Fix DNS / SWA custom domains before turning the lock on."
+            exit 1
+          fi
           host="${PROD_URL#https://}"; host="${host%%/*}"
           jq --arg fdid "$fdid" --arg host "$host" \
              '.forwardingGateway = {requiredHeaders: {"X-Azure-FDID": $fdid}, allowedForwardedHosts: [$host]}' \

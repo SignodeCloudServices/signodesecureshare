@@ -331,12 +331,35 @@ Vite; both workflows upload `dist/` only. **It must stay in `public/`.** Until 1
 sat at the repo root and was never deployed — the 13 Oct prod release shipped without the
 security headers. CI and `deploy-prod.yml` now fail if it is missing from `dist/`.
 
-The origin lock (`forwardingGateway`: `X-Azure-FDID` + `allowedForwardedHosts`) is **not** in
-the committed file. `deploy-prod.yml` injects it when the `prod` environment variable
-`AFD_FDID` is set, using the host of `PROD_URL`. Dev (Free tier, not behind Front Door) never
-gets it. Switch it on only after every public hostname resolves through Front Door, or the
-live URL returns 403. With `PROD_ORIGIN_URL` also set, the deploy asserts the SWA's own
-hostname returns 403.
+The origin lock is **not** in the committed file. `deploy-prod.yml` injects it when the `prod`
+environment variable `AFD_FDID` is set. Dev (Free tier, not behind Front Door) never gets it.
+**Live since 14 Oct 2026 (Deploy - prod #7, `82a2164`).** Two layers, both needed:
+
+1. `networking.allowedIpRanges: ["AzureFrontDoor.Backend"]` — only Front Door egress IPs reach
+   the origin. Without it the header check is bypassable: the Front Door ID is public (it is in
+   this file) and anyone can send `X-Azure-FDID` straight to `*.azurestaticapps.net`.
+2. `forwardingGateway.requiredHeaders["X-Azure-FDID"]` — of those, only Signode's profile.
+   `allowedForwardedHosts` is set to the host of `PROD_URL`, but in testing a mismatch did not
+   block; the header is the control.
+
+Guards in the lock step, each from a real failure:
+- `AFD_FDID` is trimmed and must be a lowercase GUID.
+- **`PROD_URL` must already be served by Front Door** (response carries `x-azure-ref`), or the
+  run fails before deploying. On 14 Oct the `secureshare` CNAME pointed at the SWA hostname, not
+  the Front Door endpoint, so real traffic bypassed Front Door *and the WAF*, and turning the lock
+  on returned 403 to every visitor.
+- If the smoke test fails with the lock on, the run probes the origin with hand-built headers
+  ("Diagnose origin lock"), then **redeploys the same build unlocked** and fails. With the IP
+  layer on, those probes all return 403 from the runner; they confirm the lock is active but no
+  longer isolate the header check.
+- With `PROD_ORIGIN_URL` set, the deploy asserts the SWA's own hostname returns 403.
+
+**DNS and custom domains.** `secureshare.signode.com` is a CNAME to the Front Door endpoint
+(`SecureSharePortal-hydpg2b4gwegg6cn.a01.azurefd.net`) in the public Azure DNS zone
+`signode.com`, and is bound **only** on Front Door. Do not add it as a custom domain on
+`secureshare-swa`: SWA custom-domain validation wants the CNAME pointed at the SWA, which is how
+the record got flipped on 14 Oct. Verify from outside the network:
+`curl -sI https://secureshare.signode.com | grep -i x-azure-ref` must print a line.
 
 ## Release process
 

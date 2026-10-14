@@ -266,8 +266,13 @@ presentation.
   infrastructure steps.
 - `provision-secureshare-sites.ps1` and `apply-sensitivity-labels.ps1` also exist only in
   that Google Doc, still creating five sites and applying a `SecureShare-7Day` label.
-- Front Door and the WAF are deployed but **not in the traffic path** —
-  `secureshare.pkgconnect.com` resolves straight to the Static Web App (RB-11 gap).
+- Front Door (`secureshare-frontdoor`, Premium, `secureshare-dev-rg`, Front Door ID
+  `77d8904a-4a36-4e33-87da-b9001fa3decb`) already routes `/*` from endpoint
+  `SecureSharePortal-hydpg2b4gwegg6cn.a01.azurefd.net` to `secureshare-swa`, with WAF policy
+  `securesharewafpolicy` (Detection, DRS 2.1, Bot Manager 1.1) and access + WAF logs going to
+  the central `naissc` workspace by Azure Policy. It is **not yet in the traffic path**: no
+  custom domain is bound to it (WS2). A second, orphaned WAF policy `SecureShare` is attached
+  to nothing — delete it.
 - Private endpoints exist but are unused: no VNet integration on the Function App, and
   public network access is enabled on Storage and Key Vault (RB-07/RB-08, reopened).
 
@@ -311,6 +316,20 @@ presentation.
   library, which threshold, which of two similar-sounding permissions.
 
 ---
+
+## Static Web App config and the Front Door origin lock
+
+`public/staticwebapp.config.json` (security headers, SPA fallback) is copied into `dist/` by
+Vite; both workflows upload `dist/` only. **It must stay in `public/`.** Until 14 Oct 2026 it
+sat at the repo root and was never deployed — the 13 Oct prod release shipped without the
+security headers. CI and `deploy-prod.yml` now fail if it is missing from `dist/`.
+
+The origin lock (`forwardingGateway`: `X-Azure-FDID` + `allowedForwardedHosts`) is **not** in
+the committed file. `deploy-prod.yml` injects it when the `prod` environment variable
+`AFD_FDID` is set, using the host of `PROD_URL`. Dev (Free tier, not behind Front Door) never
+gets it. Switch it on only after every public hostname resolves through Front Door, or the
+live URL returns 403. With `PROD_ORIGIN_URL` also set, the deploy asserts the SWA's own
+hostname returns 403.
 
 ## Release process
 

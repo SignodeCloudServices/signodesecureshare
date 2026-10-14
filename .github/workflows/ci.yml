@@ -54,6 +54,17 @@ jobs:
       - name: Verify build output
         run: test -f dist/index.html || (echo "dist/index.html missing" && exit 1)
 
+      # staticwebapp.config.json carries the security headers, the SPA routing
+      # fallback and (in prod) the Front Door origin lock. The workflows upload
+      # dist/ only, so it must be built INTO dist/ — it lives in public/ for
+      # that reason. It was at the repo root until 14 Oct 2026 and silently
+      # never deployed.
+      - name: SWA config is in the build output
+        run: |
+          test -f dist/staticwebapp.config.json || { echo "::error::dist/staticwebapp.config.json missing — it must live in public/"; exit 1; }
+          python3 -m json.tool dist/staticwebapp.config.json >/dev/null
+          echo "OK: staticwebapp.config.json present and valid."
+
       # Disclosure check, same as deploy-prod.yml (WS1.3). Run here too so a PR
       # that re-imports an internal documentation page statically fails at
       # review, not weeks later at release time.

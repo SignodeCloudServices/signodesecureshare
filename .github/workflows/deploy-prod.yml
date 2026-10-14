@@ -100,6 +100,11 @@ jobs:
           fi
           echo "OK: no internal documentation markers in dist/."
 
+      - name: SWA config is in the build output
+        run: |
+          test -f dist/staticwebapp.config.json || { echo "::error::dist/staticwebapp.config.json missing — it must live in public/"; exit 1; }
+          python3 -m json.tool dist/staticwebapp.config.json >/dev/null
+
       - uses: actions/upload-artifact@v4
         with:
           name: spa-dist-prod
@@ -129,6 +134,40 @@ jobs:
           [ -n "$PROD_URL" ] || { echo "::error::Environment variable PROD_URL is not set on the prod environment."; missing=1; }
           exit $missing
 
+      # -----------------------------------------------------------------------
+      # Front Door origin lock (WS2.4)
+      #
+      # When the prod environment variable AFD_FDID is set, add a
+      # forwardingGateway block so the Static Web App answers ONLY requests that
+      # arrive through Signode's Front Door profile, for the PROD_URL hostname.
+      # Direct requests to the *.azurestaticapps.net hostname then get 403, so
+      # the WAF cannot be bypassed.
+      #
+      # It is injected here, not committed in public/staticwebapp.config.json,
+      # because the same file deploys to dev (Free tier, not behind Front Door),
+      # and because the lock must switch on only AFTER every public hostname
+      # resolves through Front Door — otherwise the live URL starts returning
+      # 403. Turning the lock on or off is a variable change plus a release.
+      #
+      # The Front Door ID is not a secret: Front Door overwrites X-Azure-FDID
+      # with the true profile ID, so another profile cannot spoof it.
+      # -----------------------------------------------------------------------
+      - name: Front Door origin lock
+        env:
+          AFD_FDID: ${{ vars.AFD_FDID }}
+          PROD_URL: ${{ vars.PROD_URL }}
+        run: |
+          if [ -z "$AFD_FDID" ]; then
+            echo "::warning::AFD_FDID not set — origin lock OFF. The Static Web App is reachable without Front Door."
+            exit 0
+          fi
+          host="${PROD_URL#https://}"; host="${host%%/*}"
+          jq --arg fdid "$AFD_FDID" --arg host "$host" \
+             '.forwardingGateway = {requiredHeaders: {"X-Azure-FDID": $fdid}, allowedForwardedHosts: [$host]}' \
+             dist/staticwebapp.config.json > config.tmp && mv config.tmp dist/staticwebapp.config.json
+          echo "Origin lock ON: Front Door $AFD_FDID, host $host"
+          jq .forwardingGateway dist/staticwebapp.config.json
+
       - name: Deploy to Static Web Apps (prod)
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -147,3 +186,14 @@ jobs:
           code=$(curl -s -o /dev/null -w "%{http_code}" "$PROD_URL")
           echo "Portal at $PROD_URL returned $code"
           test "$code" = "200"
+
+      # Evidence for the security review: with the lock on, the origin itself
+      # must refuse direct traffic. PROD_ORIGIN_URL is the SWA default hostname.
+      - name: Origin refuses direct access
+        if: ${{ vars.AFD_FDID != '' && vars.PROD_ORIGIN_URL != '' }}
+        env:
+          ORIGIN: ${{ vars.PROD_ORIGIN_URL }}
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$ORIGIN")
+          echo "Direct origin $ORIGIN returned $code"
+          test "$code" = "403" || { echo "::error::Origin answered $code without Front Door — the lock is not effective."; exit 1; }

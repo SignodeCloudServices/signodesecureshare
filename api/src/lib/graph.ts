@@ -7,8 +7,9 @@
 //                         scoped to an AU holding
 //                         ONLY the guest-eligible
 //                         (External) groups
-//   sponsor/admin check   GroupMember.Read.All + User.ReadBasic.All
-//   redemption state      User.Read.All (externalUserState)
+//   sponsor/admin check   GroupMember.Read.All + User.Read.All
+//   redemption state      User.Read.All (externalUserState; also satisfies
+//                         checkMemberGroups, so User.ReadBasic.All is not needed)
 //   revoke sessions       User.RevokeSessions.All
 //
 // DefaultAzureCredential resolves to the managed identity in Azure and to

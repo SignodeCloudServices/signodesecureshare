@@ -103,9 +103,10 @@ jobs:
       # to https://secureshare.signode.com/api/health.
       - name: Smoke test
         run: |
-          # Flex apps can return an empty top-level defaultHostName (seen at
-          # creation, 14 Oct 2026); fall back to the first host name.
-          host=$(az functionapp show -g secureshare-dev-rg -n "$FUNCTION_APP" --query "defaultHostName || hostNames[0]" -o tsv)
+          # `az functionapp show` returned null host names for this Flex app (14 Oct
+          # 2026); the ARM resource itself carries them under properties.
+          host=$(az resource show -g secureshare-dev-rg -n "$FUNCTION_APP" --resource-type Microsoft.Web/sites \
+                   --query "properties.defaultHostName || properties.hostNames[0]" -o tsv)
           [ -n "$host" ] || { echo "::error::Could not resolve the Function App hostname."; exit 1; }
           for i in $(seq 1 12); do
             code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "https://$host/api/health")

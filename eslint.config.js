@@ -14,7 +14,7 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules"] },
+  { ignores: ["**/dist", "**/node_modules"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
@@ -42,5 +42,10 @@ export default tseslint.config(
       "@typescript-eslint/no-empty-object-type": "off",
       "@typescript-eslint/no-unused-vars": "off",
     },
+  },
+  // The invitation API (api/) runs on Node, not in the browser.
+  {
+    files: ["api/**/*.ts"],
+    languageOptions: { globals: globals.node },
   },
 );

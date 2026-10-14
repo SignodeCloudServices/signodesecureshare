@@ -194,6 +194,32 @@ CSPRNG, single-use and revocable is satisfied by there being no token; keep the 
 guard against anyone reintroducing one. What the portal stores is an invitation *record*
 (who, whom, which scope, until when) for audit and revocation — metadata, not a credential.
 
+**Built in `api/` (WS3, from 14 Oct 2026)** — TypeScript on Node 22, Functions v4, bundled
+with esbuild so it imports `src/lib/retention.ts` and `src/lib/folder-scopes.ts` directly
+(one source for limits and eligible scopes). See `api/README.md`.
+- **No on-behalf-of for invitations.** The API validates the user's token (who is asking),
+  then calls Graph as the Function App's **managed identity**. OBO is needed only when file
+  traffic moves behind the API.
+- **Runs on its own Function App, `secureshare-api`** (Flex, Node 22), created 14 Oct 2026.
+  Its identity is `11db5319-39bf-4623-a992-2ee6003a4802` (Graph app permissions
+  `GroupMember.Read.All`, `User.Read.All`, `User.RevokeSessions.All`; storage roles on
+  `securesharestorage143043`; keyless `AzureWebJobsStorage__accountName`).
+  Two identities, two narrow grants: the `secureshare-api` identity holds the directory
+  grants (invite guests, manage the guest groups) and **no SharePoint access**; the
+  `SecureSharePortal` identity `cc0b2c45-…` keeps `Sites.Selected` for the later file API and
+  holds **no directory write**. Do not merge them. `SecureSharePortal` itself is .NET 10 with
+  leftover AI-template settings and no functions; nothing deploys to it.
+- **The SPA requests one non-Graph scope:** `api://<api client id>/Invitations.ReadWrite`.
+  This is the only exception to "SPA permissions match `GRAPH_SCOPES`"; it is not a Graph
+  permission and grants no directory access.
+- **The administrative unit for Groups Administrator holds only guest-eligible (External)
+  groups.** Putting the 40 internal region/department groups in it would let the API add a
+  guest to them.
+- The server-side checks are unit-tested (`api/test`, run in CI's `build` job). A failing
+  test there is a security regression, not a flaky test.
+- Guest objects are not deleted by the expiry sweep (needs a broader role); membership is
+  removed and quarterly access reviews clean up guests.
+
 Copy that told users to "use the Send Invitation button" was corrected on `LiveHomePage`
 and `HelpPage` at the same time. If that button is ever restored, those two need revisiting
 together — they are the surfaces that describe it.
@@ -262,7 +288,7 @@ presentation.
 - `@tanstack/react-query` is declared but no `QueryClientProvider` exists. Keep it — it
   is the right choice for caching Graph calls. Wire it when the data layer grows.
 - `README.md` is UTF-16LE and contains only the repo name.
-- No tests.
+- No tests for the SPA. The API (`api/`) has unit tests for its checks and token validation.
 
 **Infrastructure**
 - **There is no IaC in this repository.** `main.bicep` and `network.bicep` exist only in
@@ -367,6 +393,7 @@ the record got flipped on 14 Oct. Verify from outside the network:
 |---|---|---|---|
 | `ci.yml` | Pull request to `main` | — | lint, runtime `npm audit` (high+), build |
 | `deploy-dev.yml` | Push to `main` | `secureshare-dev-swa` | none |
+| `deploy-api.yml` | Tag `v*`, or manual run | Function App `secureshare-api` (Flex, Node 22) | commit on `main`; audit, typecheck, unit tests, bundle; **`prod` environment approval**; OIDC via the `prod` federated credential |
 | `deploy-prod.yml` | Tag `v*`, or manual run | `secureshare-swa` | commit must be on `main`; lint, audit, build, bundle-disclosure check, prod client ID check; **`prod` environment approval** |
 
 To release: merge to `main` through a PR, confirm dev, then `git tag v1.0.0 && git push
@@ -397,9 +424,9 @@ These cannot be set from a workflow file. Status as of 13 Oct 2026:
       `PROD_ORIGIN_URL` = `https://calm-pebble-011c41510.6.azurestaticapps.net`,
       `AFD_FDID` = `77d8904a-4a36-4e33-87da-b9001fa3decb` (origin lock on).
 
-- [ ] **Federated credential** for the `prod` environment on `cs-secure-share-github-deploy`
-      (subject `repo:SignodeCloudServices/signodesecureshare:environment:prod`), needed
-      only when infrastructure steps are added.
+- [x] **Federated credential** for the `prod` environment on `cs-secure-share-github-deploy`
+      (subject `repo:SignodeCloudServices/signodesecureshare:environment:prod`), created
+      14 Oct 2026 for `deploy-api.yml`, with **Website Contributor** on `secureshare-api` only.
 - [ ] **Repository visibility → private.** Check the org's GitHub plan first: on GitHub
       Free, branch protection and environment required reviewers are not available on
       private repositories, so going private would silently remove the gates above.

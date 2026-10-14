@@ -181,11 +181,20 @@ jobs:
       - name: Smoke test
         env:
           PROD_URL: ${{ vars.PROD_URL }}
+        # Retry for up to 5 minutes. A new staticwebapp.config.json (for example
+        # switching the origin lock on) takes a while to reach every SWA edge,
+        # and a single check after a fixed sleep failed on the first locked
+        # release (14 Oct 2026). Every attempt's status is printed so a real
+        # failure (persistent 403 = lock rejecting Front Door) is diagnosable.
         run: |
-          sleep 30
-          code=$(curl -s -o /dev/null -w "%{http_code}" "$PROD_URL")
-          echo "Portal at $PROD_URL returned $code"
-          test "$code" = "200"
+          for i in $(seq 1 20); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$PROD_URL")
+            echo "Attempt $i: $PROD_URL returned $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 15
+          done
+          echo "::error::$PROD_URL did not return 200 within 5 minutes (last: $code). If 403 persists, the origin lock is rejecting Front Door traffic — unset AFD_FDID and redeploy."
+          exit 1
 
       # Evidence for the security review: with the lock on, the origin itself
       # must refuse direct traffic. PROD_ORIGIN_URL is the SWA default hostname.
@@ -194,6 +203,6 @@ jobs:
         env:
           ORIGIN: ${{ vars.PROD_ORIGIN_URL }}
         run: |
-          code=$(curl -s -o /dev/null -w "%{http_code}" "$ORIGIN")
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$ORIGIN")
           echo "Direct origin $ORIGIN returned $code"
           test "$code" = "403" || { echo "::error::Origin answered $code without Front Door — the lock is not effective."; exit 1; }

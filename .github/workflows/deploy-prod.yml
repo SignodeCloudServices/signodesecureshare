@@ -149,8 +149,13 @@ jobs:
       # resolves through Front Door — otherwise the live URL starts returning
       # 403. Turning the lock on or off is a variable change plus a release.
       #
-      # The Front Door ID is not a secret: Front Door overwrites X-Azure-FDID
-      # with the true profile ID, so another profile cannot spoof it.
+      # The Front Door ID is not a secret (it is in CLAUDE.md, in a public repo).
+      # Front Door overwrites X-Azure-FDID with the true profile ID, so another
+      # Front Door profile cannot spoof it — but a client talking DIRECTLY to
+      # the *.azurestaticapps.net origin can send any header it likes. The
+      # header check is only complete together with
+      # networking.allowedIpRanges = ["AzureFrontDoor.Backend"] (to be added
+      # once the header lock is proven; see "Diagnose origin lock").
       # -----------------------------------------------------------------------
       - name: Front Door origin lock
         env:
@@ -220,6 +225,41 @@ jobs:
           code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$ORIGIN")
           echo "Direct origin $ORIGIN returned $code"
           test "$code" = "403" || { echo "::error::Origin answered $code without Front Door — the lock is not effective."; exit 1; }
+
+      # -----------------------------------------------------------------------
+      # Origin-lock diagnostics (runs only when the locked site failed).
+      # Probes the SWA origin directly with hand-built headers, while the lock
+      # is still deployed, to isolate WHICH check is refusing traffic:
+      #   A  no headers                      -> expect 403 (lock is active)
+      #   B  FDID + X-Forwarded-Host=PROD    -> 200 means the SWA side accepts
+      #      exactly what Front Door should send, so the fault is on the Front
+      #      Door side (what it actually sends, or a cached 403)
+      #   C  FDID only                       -> does a missing forwarded host block?
+      #   D  FDID + X-Forwarded-Host=*.azurefd.net
+      # Plus the response headers Front Door returns for PROD_URL (x-cache shows
+      # a cached 403). This works only while networking.allowedIpRanges is NOT
+      # set; once it is, direct probes from a runner are refused by IP first.
+      # -----------------------------------------------------------------------
+      - name: Diagnose origin lock
+        if: ${{ failure() && steps.smoke.outcome == 'failure' && vars.AFD_FDID != '' && vars.PROD_ORIGIN_URL != '' }}
+        env:
+          AFD_FDID: ${{ vars.AFD_FDID }}
+          PROD_URL: ${{ vars.PROD_URL }}
+          ORIGIN: ${{ vars.PROD_ORIGIN_URL }}
+        run: |
+          fdid=$(printf '%s' "$AFD_FDID" | tr -d '[:space:]"'"'"'')
+          host="${PROD_URL#https://}"; host="${host%%/*}"
+          afd="SecureSharePortal-hydpg2b4gwegg6cn.a01.azurefd.net"
+          probe() { printf '%-40s %s\n' "$1" "$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "${@:2}" "$ORIGIN")"; }
+          echo "== Direct to origin $ORIGIN =="
+          probe "A  no headers"
+          probe "B  FDID + XFH=$host"                 -H "X-Azure-FDID: $fdid" -H "X-Forwarded-Host: $host"
+          probe "C  FDID only"                        -H "X-Azure-FDID: $fdid"
+          probe "D  FDID + XFH=azurefd endpoint"      -H "X-Azure-FDID: $fdid" -H "X-Forwarded-Host: $afd"
+          echo; echo "== Through Front Door: $PROD_URL =="
+          curl -s -o /dev/null -D - --max-time 15 "$PROD_URL" | grep -Ei '^(HTTP|x-cache|x-azure-ref|cache-control|age|content-type)' || true
+          echo; echo "== Body of the 403 (first 300 bytes) =="
+          curl -s --max-time 15 "$PROD_URL" | head -c 300; echo
 
       # -----------------------------------------------------------------------
       # Automatic rollback of the origin lock.

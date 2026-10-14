@@ -120,3 +120,30 @@ export const graphRequest = {
 };
 
 export const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
+
+// ---------------------------------------------------------------------------
+// Invitation API (WS3) — the one non-Graph scope the SPA requests.
+//
+// One Function App (secureshare-api) serves both portals, so both SPA
+// registrations request the same API: cs-secure-share-prod-api. This is not a
+// Graph permission and grants no directory access; it only lets the API know
+// who is asking. See CLAUDE.md "Invitations".
+//
+// Requested in its own token (MSAL cannot mix Graph and a custom API in one
+// access token), never added to loginRequest, so sign-in is unchanged.
+// ---------------------------------------------------------------------------
+export const INVITATIONS_API_SCOPE =
+  "api://e07aa77f-557f-45c1-bd76-fb61609381ab/Invitations.ReadWrite";
+
+/**
+ * Same-origin path, routed by Front Door's api-route to secureshare-api.
+ * Locally, vite.config.ts proxies /api to the production hostname.
+ */
+export const INVITATIONS_API_BASE = "/api";
+
+/**
+ * Build-time switch. Off until the API is deployed and its grants are in
+ * place; deploy-prod.yml sets it explicitly. The dev Static Web App has no
+ * /api route, so dev builds leave it off.
+ */
+export const INVITATIONS_ENABLED = import.meta.env.VITE_INVITATIONS_ENABLED === "true";

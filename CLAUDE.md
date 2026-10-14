@@ -1,7 +1,7 @@
 # Signode SecureShare Portal
 
 Internet-facing file-exchange portal for sharing files with third parties (vendors,
-customers, partners). **Live** at `secureshare.pkgconnect.com` with real Entra sign-in,
+customers, partners). **Live** at `secureshare.signode.com` with real Entra sign-in,
 real group-driven scoping, and real SharePoint content via Microsoft Graph.
 
 Owner: Grant Nonnemacher, Sr. Systems Engineer. Project knowledge base is Notion
@@ -23,11 +23,17 @@ portal signs in through `cs-secure-share-prod-spa`.
 | | Static Web App | Tier | URL | SPA registration |
 |---|---|---|---|---|
 | dev | `secureshare-dev-swa` | Free | `calm-smoke-01ee89410.2.azurestaticapps.net` | `cs-secure-share-dev-spa` `212f8c25-…` |
-| prod | `secureshare-swa` | Standard | `secureshare.pkgconnect.com` → `secureshare.signode.com` (WS2.2) | `cs-secure-share-prod-spa` `d25ef5a7-…` |
+| prod | `secureshare-swa` | Standard | `secureshare.signode.com` (via Front Door) | `cs-secure-share-prod-spa` `d25ef5a7-…` |
 
 Both SWAs use deployment source **Other**: GitHub is not linked from the Azure side, so
 Azure never commits its own workflow or repo-wide token. The SPA client ID is chosen at
 build time (`VITE_SPA_CLIENT_ID`, see `auth-config.ts`).
+
+**`secureshare.signode.com` is the only public hostname** (decided 14 Oct 2026, D8). The
+earlier `secureshare.pkgconnect.com` was retired outright, with no redirect: `pkgconnect.com`
+is the internal AD domain and is not advertised to partners. Do not reintroduce it in copy,
+config, redirect URIs or DNS. The UI shows `window.location.origin` rather than a hard-coded
+hostname for the same reason.
 
 ---
 
@@ -270,9 +276,10 @@ presentation.
   `77d8904a-4a36-4e33-87da-b9001fa3decb`) already routes `/*` from endpoint
   `SecureSharePortal-hydpg2b4gwegg6cn.a01.azurefd.net` to `secureshare-swa`, with WAF policy
   `securesharewafpolicy` (Detection, DRS 2.1, Bot Manager 1.1) and access + WAF logs going to
-  the central `naissc` workspace by Azure Policy. It is **not yet in the traffic path**: no
-  custom domain is bound to it (WS2). A second, orphaned WAF policy `SecureShare` is attached
-  to nothing — delete it.
+  the central `naissc` workspace by Azure Policy. Custom domain `secureshare.signode.com`
+  (AFD managed certificate) is bound to `default-route` and covered by the WAF security
+  policy. Origin probe HTTPS, forwarding HTTPS only. The orphaned `SecureShare` WAF policy
+  was deleted 14 Oct 2026.
 - Private endpoints exist but are unused: no VNet integration on the Function App, and
   public network access is enabled on Storage and Key Vault (RB-07/RB-08, reopened).
 
@@ -363,8 +370,9 @@ These cannot be set from a workflow file. Status as of 13 Oct 2026:
 - [x] **`dev` secret** `SWA_DEPLOYMENT_TOKEN_DEV` → token of `secureshare-dev-swa` (reset
       13 Oct after briefly being stored as a plain variable).
 - [x] **`prod` secret** `SWA_DEPLOYMENT_TOKEN_PROD` → token of `secureshare-swa`.
-- [x] **Environment variable** `PROD_URL` on `prod` = `https://secureshare.pkgconnect.com`;
-      change to `https://secureshare.signode.com` at the WS2.2 cutover.
+- [x] **Environment variables** on `prod`: `PROD_URL` = `https://secureshare.signode.com`,
+      `PROD_ORIGIN_URL` = `https://calm-pebble-011c41510.6.azurestaticapps.net`,
+      `AFD_FDID` = `77d8904a-4a36-4e33-87da-b9001fa3decb` (origin lock on).
 
 - [ ] **Federated credential** for the `prod` environment on `cs-secure-share-github-deploy`
       (subject `repo:SignodeCloudServices/signodesecureshare:environment:prod`), needed
@@ -378,7 +386,7 @@ These cannot be set from a workflow file. Status as of 13 Oct 2026:
 | Registration | URIs | Notes |
 |---|---|---|
 | `cs-secure-share-dev-spa` | `https://calm-smoke-01ee89410.2.azurestaticapps.net`, `http://localhost:5173` | Live URL removed 13 Oct after the first prod release |
-| `cs-secure-share-prod-spa` | `https://secureshare.pkgconnect.com` | Add `https://secureshare.signode.com` at the WS2.2 cutover. Never add localhost |
+| `cs-secure-share-prod-spa` | `https://secureshare.signode.com` | The only prod URI. Never add localhost or the `azurefd.net` endpoint hostname |
 
 A URI under the **Web** platform fails with `AADSTS9002326`; a missing one with `AADSTS50011`.
 `cs-secure-share-prod-spa` has *Assignment required* on, with the 42 folder groups and

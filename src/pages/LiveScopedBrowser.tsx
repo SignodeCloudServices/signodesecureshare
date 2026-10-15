@@ -24,7 +24,7 @@
 import * as React from "react";
 import { useMsal } from "@azure/msal-react";
 import { useAuth } from "@/lib/auth-context";
-import { listChildren, getDownloadUrl, type DriveItem } from "@/lib/graph";
+import { listChildren, getDownloadUrl, friendlyGraphError, type DriveItem } from "@/lib/graph";
 import { PORTAL_ROOT, rootScopePaths, scopeLabel } from "@/lib/folder-scopes";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -119,7 +119,7 @@ export function LiveScopedBrowser() {
         setItems(result);
       })
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+        if (!cancelled) setError(friendlyGraphError(e, "browse"));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -138,7 +138,7 @@ export function LiveScopedBrowser() {
         (await getDownloadUrl(instance, account, `${currentPath}/${item.name}`));
       window.open(url, "_blank");
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(friendlyGraphError(e, "download"));
     }
   }
 
@@ -234,8 +234,10 @@ export function LiveScopedBrowser() {
             <div className="flex items-start gap-2">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
+                {/* Plain language only: the raw Graph error names the internal
+                    SharePoint host and path. Full detail goes to the console. */}
                 <strong>Could not load this folder.</strong>
-                <p className="mt-1 font-mono text-xs break-all">{error}</p>
+                <p className="mt-1">{error}</p>
               </div>
             </div>
           </CardContent>

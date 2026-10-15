@@ -235,6 +235,14 @@ with esbuild so it imports `src/lib/retention.ts` and `src/lib/folder-scopes.ts`
   test there is a security regression, not a flaky test.
 - Guest objects are not deleted by the expiry sweep (needs a broader role); membership is
   removed and quarterly access reviews clean up guests.
+- **Access changes reach SharePoint up to ~1 hour late.** SharePoint caches each user's Entra
+  group memberships. After an invitation (or a revoke and re-invite) the portal already shows
+  the folder while Graph still answers `404 itemNotFound` — SharePoint says "not found", not
+  "forbidden", when it thinks you lack access. Seen 15 Oct 2026; cleared by waiting. Revoke
+  removes membership and revokes sessions at once, but an issued SharePoint token can last
+  until it expires. The live pages show a plain "access can take up to an hour" message via
+  `friendlyGraphError()` in `graph.ts`, never the raw Graph error (it names the internal
+  SharePoint host and drive path).
 
 Copy that told users to "use the Send Invitation button" was corrected on `LiveHomePage`
 and `HelpPage` at the same time. If that button is ever restored, those two need revisiting

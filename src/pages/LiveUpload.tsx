@@ -17,6 +17,7 @@ import {
   listFolderPaths,
   uploadFile,
   SIMPLE_UPLOAD_LIMIT,
+  friendlyGraphError,
 } from "@/lib/graph";
 import { rootScopePaths, scopeLabel } from "@/lib/folder-scopes";
 import { Card, CardContent } from "@/components/ui/card";
@@ -122,7 +123,7 @@ export function LiveUpload() {
           prev.map((f) => (f.id === qf.id ? { ...f, status: "done" } : f))
         );
       } catch (e) {
-        const message = e instanceof Error ? e.message : String(e);
+        const message = friendlyGraphError(e, "upload");
         setFiles((prev) =>
           prev.map((f) =>
             f.id === qf.id ? { ...f, status: "error", message } : f

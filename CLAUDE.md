@@ -212,7 +212,7 @@ with esbuild so it imports `src/lib/retention.ts` and `src/lib/folder-scopes.ts`
   traffic moves behind the API.
 - **Runs on its own Function App, `secureshare-api`** (Flex, Node 22), created 14 Oct 2026.
   Its identity is `11db5319-39bf-4623-a992-2ee6003a4802` (Graph app permissions
-  `GroupMember.Read.All`, `User.Read.All`, `User.RevokeSessions.All`; storage roles on
+  `User.Invite.All`, `GroupMember.Read.All`, `User.Read.All`, `User.RevokeSessions.All`; storage roles on
   `securesharestorage143043`; keyless `AzureWebJobsStorage__accountName`).
   Two identities, two narrow grants: the `secureshare-api` identity holds the directory
   grants (invite guests, manage the guest groups) and **no SharePoint access**; the
@@ -226,8 +226,11 @@ with esbuild so it imports `src/lib/retention.ts` and `src/lib/folder-scopes.ts`
   groups.** Putting the 40 internal region/department groups in it would let the API add a
   guest to them. AU: **`SecureShare Guest Groups`**, `3fc4d890-3c9c-488c-ba21-f04a8a3c8138`
   (restricted management off), created 14 Oct 2026 with `SG-SecureShare-EXT-POC_Partner_A`
-  and `_B`. The `secureshare-api` identity holds **Guest Inviter** (tenant, active, permanent)
-  and **Groups Administrator** scoped to this AU only.
+  and `_B`. The `secureshare-api` identity holds **Groups Administrator** scoped to this AU
+  only. **Invitations need the Graph application permission `User.Invite.All`:** the
+  invitation API refuses app-only calls without it and does not honour the Guest Inviter
+  directory role (15 Oct 2026, `401 Insufficient privileges … MSGraphInviteAPI`). Guest
+  Inviter was assigned first and can be removed.
 - The server-side checks are unit-tested (`api/test`, run in CI's `build` job). A failing
   test there is a security regression, not a flaky test.
 - Guest objects are not deleted by the expiry sweep (needs a broader role); membership is

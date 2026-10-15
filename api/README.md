@@ -37,7 +37,7 @@ The constants and the scope registry are imported from the portal's own
 
 | For | Preferred | Fallback |
 |---|---|---|
-| Invite guest | Directory role **Guest Inviter** | Graph app `User.Invite.All` |
+| Invite guest | Graph app **`User.Invite.All`** — required. The invitation API refuses app-only calls without it and ignores the Guest Inviter directory role (verified 15 Oct 2026) | — |
 | Add/remove member | **Groups Administrator** scoped to an administrative unit holding **only the guest-eligible (External) groups** | Graph app `GroupMember.ReadWrite.All` |
 | Admin/sponsor check, redemption state | Graph app `GroupMember.Read.All` + `User.Read.All` (`User.Read.All` is needed for `externalUserState` and also covers `checkMemberGroups`) | — |
 | Revoke sessions | Graph app `User.RevokeSessions.All` | — |

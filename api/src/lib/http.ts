@@ -1,5 +1,22 @@
 import type { HttpResponseInit, InvocationContext } from "@azure/functions";
 import { AuthError } from "./auth";
+import { GraphError } from "./graph";
+
+/**
+ * Which directory step a refused Graph call was, in words a sponsor or the
+ * Operations center can act on. The caller is always an authenticated
+ * sponsor, so naming the step discloses nothing; it turns a bare "Internal
+ * error" into a pointer at the missing grant (15 Oct 2026: the invite step
+ * was refused because the identity lacked User.Invite.All).
+ */
+function refusedStep(e: GraphError): string {
+  const m = e.message;
+  if (m.includes("POST /invitations")) return "creating the guest invitation (needs Graph User.Invite.All)";
+  if (/\/groups\/[^ ]+\/members/.test(m)) return "changing folder-group membership (needs Groups Administrator on the SecureShare Guest Groups unit)";
+  if (m.includes("revokeSignInSessions")) return "revoking the guest's sessions (needs Graph User.RevokeSessions.All)";
+  if (m.includes("checkMemberGroups") || m.includes("/owners")) return "checking sponsor or admin membership (needs Graph GroupMember.Read.All)";
+  return "a directory call";
+}
 
 export const json = (status: number, body: unknown): HttpResponseInit => ({
   status,
@@ -35,6 +52,11 @@ export function audit(
 /** Map thrown errors to responses without leaking internals. */
 export function failure(ctx: InvocationContext, e: unknown): HttpResponseInit {
   if (e instanceof AuthError) return problem(e.status, e.message);
+  if (e instanceof GraphError && (e.status === 401 || e.status === 403)) {
+    ctx.error(e.stack ?? e.message);
+    // 502: the request was valid; an upstream permission is missing.
+    return problem(502, `The directory refused ${refusedStep(e)}. Nothing was changed for this request. Tell the SecureShare administrator.`);
+  }
   ctx.error(e instanceof Error ? e.stack ?? e.message : String(e));
   return problem(500, "Internal error");
 }

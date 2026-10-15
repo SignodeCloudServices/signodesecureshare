@@ -2,7 +2,8 @@
 // Microsoft Graph, app-only, as the Function App's managed identity.
 //
 // Grants the identity needs (runbook WS3.1). Preferred / fallback:
-//   invite guest          Guest Inviter role        / User.Invite.All
+//   invite guest          User.Invite.All (app-only invitations ignore the
+//                         Guest Inviter role — verified 15 Oct 2026)
 //   add/remove member     Groups Administrator      / GroupMember.ReadWrite.All
 //                         scoped to an AU holding
 //                         ONLY the guest-eligible

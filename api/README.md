@@ -65,6 +65,26 @@ identity holds the grants below — not `SecureSharePortal`, whose identity hold
 both portals; its token audience is `cs-secure-share-prod-api`, and both SPA
 registrations request that API's `Invitations.ReadWrite` scope.
 
+## Origin lock (WS2.4 item 2)
+
+Only Front Door may reach the Function App: the `AzureFrontDoor.Backend` service
+tag, and of those only Signode's profile (`X-Azure-FDID`). Same two layers as the
+Static Web App. Deployment is unaffected: it goes through the SCM site and ARM,
+which keep their own (unrestricted) rules.
+
+```bash
+az functionapp config access-restriction add -g secureshare-dev-rg -n secureshare-api \
+  --rule-name AllowFrontDoorSignode --action Allow --priority 100 \
+  --service-tag AzureFrontDoor.Backend \
+  --http-headers x-azure-fdid=77d8904a-4a36-4e33-87da-b9001fa3decb
+az functionapp config access-restriction set -g secureshare-dev-rg -n secureshare-api \
+  --default-action Deny --use-same-restrictions-for-scm-site false
+```
+
+Verify: `https://secureshare.signode.com/api/health` → 200; the Function App's own
+hostname → 403. Deploy - API asserts both. Rollback:
+`az functionapp config access-restriction set … --default-action Allow`.
+
 ## Develop
 
 ```bash

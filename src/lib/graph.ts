@@ -15,6 +15,40 @@ import type { IPublicClientApplication, AccountInfo } from "@azure/msal-browser"
 import { GRAPH_BASE, SITE_ID, DRIVE_ID, graphRequest } from "./auth-config";
 import { toGraphPath } from "./folder-scopes";
 
+/**
+ * A failed Graph call. `message` keeps the full detail for the console and
+ * support; `status` is what the UI uses to say something a partner can act
+ * on. The raw message must not be shown to users: it contains the internal
+ * SharePoint hostname and drive path (residual risk 6 in the runbook).
+ */
+export class GraphError extends Error {
+  constructor(public status: number, public path: string, detail: string) {
+    super(`Graph ${status} on ${path}: ${detail}`);
+    this.name = "GraphError";
+  }
+}
+
+export type GraphAction = "browse" | "download" | "upload";
+
+/**
+ * Plain-language message for a failed Graph call, logged in full to the
+ * console. SharePoint answers "not found" (404) as well as "forbidden" (403)
+ * when the user lacks access, and both are normal for up to about an hour
+ * after access is granted, while SharePoint refreshes its copy of the user's
+ * Entra group memberships (seen 15 Oct 2026 after a revoke and re-invite).
+ */
+export function friendlyGraphError(e: unknown, action: GraphAction): string {
+  console.error(e);
+  const status = e instanceof GraphError ? e.status : 0;
+  const what = action === "upload" ? "upload to this folder" : action === "download" ? "download this file" : "open this folder";
+  if (status === 403 || status === 404) {
+    return `You don't have access to ${what} yet. New access can take up to an hour to become active after an invitation. Try again later; if it persists, contact your internal Signode Support Contact.`;
+  }
+  if (status === 401) return "Your session has expired. Sign out and sign in again.";
+  if (status === 429 || status >= 500) return "The file service is busy. Wait a moment and try again.";
+  return `Could not ${what}. Try again; if it persists, contact your internal Signode Support Contact.`;
+}
+
 export type DriveItem = {
   id: string;
   name: string;
@@ -61,7 +95,7 @@ async function graphFetch<T>(
   if (!res.ok) {
     const body = await res.text();
     // 403 here usually means the ACL denied it, which is the system working.
-    throw new Error(`Graph ${res.status} on ${path}: ${body.slice(0, 300)}`);
+    throw new GraphError(res.status, path, body.slice(0, 300));
   }
 
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T);

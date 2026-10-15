@@ -57,6 +57,22 @@ export function failure(ctx: InvocationContext, e: unknown): HttpResponseInit {
     // 502: the request was valid; an upstream permission is missing.
     return problem(502, `The directory refused ${refusedStep(e)}. Nothing was changed for this request. Tell the SecureShare administrator.`);
   }
+  if (e instanceof GraphError && e.status === 400 && e.message.includes("POST /invitations")) {
+    // Entra refused the address itself (15 Oct 2026: a plus-address returned
+    // "The Primary SMTP Address is an invalid value"). The request was the
+    // sponsor's to fix, so say so: 400, not a bare 500. Graph's own message
+    // is not echoed — the sponsor needs the action, not Exchange wording.
+    ctx.warn(e.stack ?? e.message);
+    return problem(
+      400,
+      "Microsoft's directory did not accept this email address, so no invitation was sent. " +
+        "Check it for typos. If it contains a plus sign (name+tag@…), use the partner's plain address instead.",
+    );
+  }
+  if (e instanceof GraphError && e.status >= 400 && e.status < 500) {
+    ctx.error(e.stack ?? e.message);
+    return problem(502, `The directory rejected ${refusedStep(e)} (${e.code}). Tell the SecureShare administrator.`);
+  }
   ctx.error(e instanceof Error ? e.stack ?? e.message : String(e));
   return problem(500, "Internal error");
 }

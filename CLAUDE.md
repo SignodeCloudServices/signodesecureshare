@@ -177,7 +177,13 @@ secret — the repository is public.
   `cs-secure-share-dev-api`, which would have given the deployment credential the API's
   Graph permissions including `Sites.Selected` on the live SharePoint site.
 - Two federated credentials, scoped by GitHub **environment** (`dev`, `prod`), not branch.
-- RBAC scoped to the resource group, never the subscription.
+- RBAC: **Website Contributor on `secureshare-api` only** (15 Oct 2026). Contributor on
+  `secureshare-dev-rg` and Key Vault Secrets Officer were removed after the permission inventory:
+  only `deploy-api.yml` signs in to Azure; the Static Web App deploys use deployment tokens.
+  Add a role only when a workflow step fails for want of it, scoped to that one resource —
+  never the resource group, never the subscription.
+- `scripts/permission-inventory.sh` (read-only, Cloud Shell) exports every grant for the six
+  SecureShare identities as Markdown. Re-run it after any permission change.
 
 Workflows must declare `permissions: id-token: write`, or `azure/login` fails with an
 error that does not point at the cause. Secrets must exist at the level the job reads
@@ -212,8 +218,14 @@ with esbuild so it imports `src/lib/retention.ts` and `src/lib/folder-scopes.ts`
   traffic moves behind the API.
 - **Runs on its own Function App, `secureshare-api`** (Flex, Node 22), created 14 Oct 2026.
   Its identity is `11db5319-39bf-4623-a992-2ee6003a4802` (Graph app permissions
-  `User.Invite.All`, `GroupMember.Read.All`, `User.Read.All`, `User.RevokeSessions.All`; storage roles on
-  `securesharestorage143043`; keyless `AzureWebJobsStorage__accountName`).
+  `User.Invite.All`, `GroupMember.Read.All`, `User.Read.All`, `User.RevokeSessions.All`; keyless
+  `AzureWebJobsStorage__accountName`). On `securesharestorage143043` it holds exactly four roles:
+  Storage Blob Data Owner, Storage Queue Data Contributor, Storage Table Data Contributor, and
+  **Reader**. Reader is deliberate (15 Oct 2026): without it the Functions host's storage health
+  check fails every 30 s with `AuthorizationPermissionMismatch` while all real storage work (host
+  lock, timer state, the invitations table) succeeds — the check reads account-level service
+  settings, which no data role covers. Reader adds no data access and cannot list keys. Never
+  "fix" that warning with Storage Account Contributor: it can list the account keys.
   Two identities, two narrow grants: the `secureshare-api` identity holds the directory
   grants (invite guests, manage the guest groups) and **no SharePoint access**; the
   `SecureSharePortal` identity `cc0b2c45-…` keeps `Sites.Selected` for the later file API and

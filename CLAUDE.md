@@ -247,6 +247,10 @@ with esbuild so it imports `src/lib/retention.ts` and `src/lib/folder-scopes.ts`
   Inviter was assigned first and can be removed.
 - The server-side checks are unit-tested (`api/test`, run in CI's `build` job). A failing
   test there is a security regression, not a flaky test.
+- **Entra refuses some invitee addresses with a 400** — a plus-address (`name+tag@gmail.com`)
+  returned `The Primary SMTP Address is an invalid value` on 15 Oct 2026. Whether every plus
+  address fails in this tenant is not yet confirmed. The API returns that as a 400 with a plain
+  "use the partner's plain address" message (`failure()` in `api/src/lib/http.ts`), not as a 500.
 - Guest objects are not deleted by the expiry sweep (needs a broader role); membership is
   removed and quarterly access reviews clean up guests.
 - **Access changes reach SharePoint up to ~1 hour late.** SharePoint caches each user's Entra

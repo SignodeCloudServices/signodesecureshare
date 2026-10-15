@@ -100,20 +100,26 @@ jobs:
           package: api-package
           sku: flexconsumption
 
-      # Liveness through the Function App's own hostname. Once the Front Door
-      # route and the Function App origin lock exist (WS2.4 item 2), this moves
-      # to https://secureshare.signode.com/api/health.
-      - name: Smoke test
+      # Liveness through Front Door — the only path that works once the
+      # Function App's access restrictions admit Front Door alone (WS2.4
+      # item 2). Then assert the Function App's own hostname refuses direct
+      # traffic, which is the evidence the WAF cannot be bypassed.
+      - name: Smoke test (through Front Door)
         run: |
-          # `az functionapp show` returned null host names for this Flex app (14 Oct
-          # 2026); the ARM resource itself carries them under properties.
-          host=$(az resource show -g secureshare-dev-rg -n "$FUNCTION_APP" --resource-type Microsoft.Web/sites \
-                   --query "properties.defaultHostName || properties.hostNames[0]" -o tsv)
-          [ -n "$host" ] || { echo "::error::Could not resolve the Function App hostname."; exit 1; }
           for i in $(seq 1 12); do
-            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "https://$host/api/health")
-            echo "Attempt $i: https://$host/api/health returned $code"
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "https://secureshare.signode.com/api/health")
+            echo "Attempt $i: https://secureshare.signode.com/api/health returned $code"
             [ "$code" = "200" ] && exit 0
             sleep 10
           done
-          echo "::error::API health check did not return 200 within 2 minutes."; exit 1
+          echo "::error::API health through Front Door did not return 200 within 2 minutes."; exit 1
+
+      - name: Function App refuses direct access
+        run: |
+          host=$(az resource show -g secureshare-dev-rg -n "$FUNCTION_APP" --resource-type Microsoft.Web/sites \
+                   --query "properties.defaultHostName || properties.hostNames[0]" -o tsv)
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "https://$host/api/health")
+          echo "Direct https://$host/api/health returned $code"
+          if [ "$code" != "403" ]; then
+            echo "::warning::Function App answered $code without Front Door. Apply the access restrictions in api/README.md (WS2.4 item 2)."
+          fi

@@ -21,7 +21,10 @@ validates the invitation; access ends on schedule.
 
 1. **Token** (`src/lib/auth.ts`): an Entra access token for this API with the
    delegated scope `Invitations.ReadWrite`, from the Signode tenant. App-only
-   tokens are refused. The caller is the token's `oid` — never the body.
+   tokens are refused. The token must have been issued to an allowed client
+   (`azp`/`appid` in `ALLOWED_CLIENT_IDS`, default the prod SPA only), so a
+   token some other app obtained for this scope is refused with 403. The caller
+   is the token's `oid` — never the body.
 2. **Checks** (`src/lib/checks.ts`, unit-tested): body shape and expiry
    (1–30 days, from `src/lib/retention.ts`), target is a guest-eligible
    `/External/` scope (from `src/lib/folder-scopes.ts`), invitee is not a
@@ -61,9 +64,10 @@ list admits nobody.
 OIDC as `cs-secure-share-github-deploy` (needs its `prod` federated credential
 and **Website Contributor** on `secureshare-api`, the dedicated Flex app whose
 identity holds the grants below — not `SecureSharePortal`, whose identity holds
-`Sites.Selected` and must not also get directory rights). One Function App serves
-both portals; its token audience is `cs-secure-share-prod-api`, and both SPA
-registrations request that API's `Invitations.ReadWrite` scope.
+`Sites.Selected` and must not also get directory rights). Its token audience is
+`cs-secure-share-prod-api`. Only the prod SPA holds that API's
+`Invitations.ReadWrite` scope and only its tokens are accepted (the dev portal is
+not behind Front Door, so it has no `/api`; its consent was removed 15 Oct).
 
 ## Origin lock (WS2.4 item 2)
 

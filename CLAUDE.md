@@ -222,6 +222,8 @@ with esbuild so it imports `src/lib/retention.ts` and `src/lib/folder-scopes.ts`
 - **The SPA requests one non-Graph scope:** `api://<api client id>/Invitations.ReadWrite`.
   This is the only exception to "SPA permissions match `GRAPH_SCOPES`"; it is not a Graph
   permission and grants no directory access.
+  Only `cs-secure-share-prod-spa` holds it, and the API accepts only tokens whose `azp`/`appid`
+  is in `ALLOWED_CLIENT_IDS` (default: the prod SPA). Do not consent it on the dev SPA.
 - **The administrative unit for Groups Administrator holds only guest-eligible (External)
   groups.** Putting the 40 internal region/department groups in it would let the API add a
   guest to them. AU: **`SecureShare Guest Groups`**, `3fc4d890-3c9c-488c-ba21-f04a8a3c8138`

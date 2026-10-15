@@ -11,6 +11,13 @@
 //
 // App-only tokens (no `scp`) are refused: every invitation must be
 // attributable to a person.
+//
+// The token must also have been issued to an allowed client (the prod SPA by
+// default). Audience proves the token is meant for this API; `azp` proves
+// which app asked for it. Without this, any registration consented to
+// Invitations.ReadWrite (the dev SPA had it until 15 Oct) could call the API.
+// The sponsor checks would still apply, but there is no reason to have a
+// second way in.
 // ---------------------------------------------------------------------------
 import { createRemoteJWKSet, jwtVerify, type JWTPayload, type JWTVerifyGetKey } from "jose";
 import type { Config } from "./config";
@@ -47,6 +54,8 @@ type Claims = JWTPayload & {
   tid?: string;
   oid?: string;
   scp?: string;
+  azp?: string;
+  appid?: string;
   upn?: string;
   preferred_username?: string;
   name?: string;
@@ -54,7 +63,7 @@ type Claims = JWTPayload & {
 
 export async function authenticate(
   authorizationHeader: string | null | undefined,
-  cfg: Pick<Config, "tenantId" | "audiences" | "requiredScope">,
+  cfg: Pick<Config, "tenantId" | "audiences" | "requiredScope" | "allowedClientIds">,
   keys: JWTVerifyGetKey = tenantJwks(cfg.tenantId),
 ): Promise<Caller> {
   const token = bearerToken(authorizationHeader);
@@ -79,6 +88,11 @@ export async function authenticate(
 
   if (claims.tid !== cfg.tenantId) throw new AuthError(401, "Invalid token");
   if (!claims.oid) throw new AuthError(401, "Invalid token");
+  // v2 tokens carry `azp`, v1 tokens `appid`; both name the requesting client.
+  const client = (claims.azp ?? claims.appid ?? "").toLowerCase();
+  if (!cfg.allowedClientIds.includes(client)) {
+    throw new AuthError(403, "Token was not issued to the SecureShare portal");
+  }
   const scopes = (claims.scp ?? "").split(" ").filter(Boolean);
   if (!scopes.includes(cfg.requiredScope)) {
     throw new AuthError(403, `Token lacks the ${cfg.requiredScope} scope`);

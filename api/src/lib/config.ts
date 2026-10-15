@@ -5,6 +5,9 @@
 //   D1  DOMAIN_POLICY_MODE / DOMAIN_POLICY_LIST  allow-list or block-list
 //   D3  EXPIRY_CLOCK                              what the 7/30-day clock governs
 //
+// Defaults that are security controls (ALLOWED_CLIENT_IDS) fail closed: an
+// unset value means the narrowest setting, never "allow anything".
+//
 // Missing required settings fail on first use with a message naming the
 // setting, rather than as a confusing 500 deep inside a Graph call.
 // ---------------------------------------------------------------------------
@@ -18,6 +21,13 @@ export type Config = {
   audiences: string[];
   /** Delegated scope the caller's token must carry. */
   requiredScope: string;
+  /**
+   * Client IDs the caller's token may have been issued to (`azp`, or `appid` on
+   * v1 tokens). Audience alone says "this token is for the API", not "it came
+   * from the portal": any app with consent to the scope could otherwise call
+   * us. Defaults to the prod SPA so a missing setting fails closed.
+   */
+  allowedClientIds: string[];
   /** sg-secureshare-admins (and any equivalents). */
   adminGroupIds: string[];
   inviteRedirectUrl: string;
@@ -35,6 +45,9 @@ export type Config = {
   tableUrl: string;
   tableName: string;
 };
+
+/** cs-secure-share-prod-spa. A public identifier, not a credential. */
+export const PROD_SPA_CLIENT_ID = "d25ef5a7-5e7a-4ebf-a06e-f3cbf047294d";
 
 function list(v: string | undefined): string[] {
   return (v ?? "")
@@ -70,6 +83,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     tenantId: required(env, "TENANT_ID"),
     audiences,
     requiredScope: env.REQUIRED_SCOPE?.trim() || "Invitations.ReadWrite",
+    allowedClientIds: list(env.ALLOWED_CLIENT_IDS ?? PROD_SPA_CLIENT_ID),
     adminGroupIds,
     inviteRedirectUrl: required(env, "INVITE_REDIRECT_URL"),
     internalDomains: list(env.INTERNAL_DOMAINS ?? "signode.com,pkgconnect.com"),

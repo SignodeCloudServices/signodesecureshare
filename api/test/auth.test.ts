@@ -4,7 +4,8 @@ import { authenticate, AuthError } from "../src/lib/auth";
 
 const TENANT = "7db30361-ce9f-4244-8d28-60553bffff38";
 const API = "11111111-2222-3333-4444-555555555555";
-const cfg = { tenantId: TENANT, audiences: [API, `api://${API}`], requiredScope: "Invitations.ReadWrite" };
+const SPA = "d25ef5a7-5e7a-4ebf-a06e-f3cbf047294d";
+const cfg = { tenantId: TENANT, audiences: [API, `api://${API}`], requiredScope: "Invitations.ReadWrite", allowedClientIds: [SPA] };
 
 let key: KeyLike;
 let otherKey: KeyLike;
@@ -19,7 +20,7 @@ beforeAll(async () => {
 });
 
 async function token(claims: Record<string, unknown> = {}, opts: { signWith?: KeyLike; iss?: string; aud?: string; exp?: string | number } = {}) {
-  return new SignJWT({ tid: TENANT, oid: "aaaaaaaa-0000-0000-0000-000000000001", scp: "Invitations.ReadWrite", upn: "sponsor@signode.com", name: "Pat Sponsor", ...claims })
+  return new SignJWT({ tid: TENANT, oid: "aaaaaaaa-0000-0000-0000-000000000001", scp: "Invitations.ReadWrite", azp: SPA, upn: "sponsor@signode.com", name: "Pat Sponsor", ...claims })
     .setProtectedHeader({ alg: "RS256", kid: "k1" })
     .setIssuer(opts.iss ?? `https://login.microsoftonline.com/${TENANT}/v2.0`)
     .setAudience(opts.aud ?? API)
@@ -69,6 +70,14 @@ describe("authenticate", () => {
   });
   it("403 when the delegated scope is missing", async () => {
     expect(await status(authenticate(`Bearer ${await token({ scp: "User.Read" })}`, cfg, jwks))).toBe(403);
+  });
+  it("403 for a token issued to another client (e.g. the dev SPA or Azure CLI)", async () => {
+    expect(await status(authenticate(`Bearer ${await token({ azp: "212f8c25-c2f7-4e09-a316-280dd4c89e73" })}`, cfg, jwks))).toBe(403);
+    expect(await status(authenticate(`Bearer ${await token({ azp: undefined })}`, cfg, jwks))).toBe(403);
+  });
+  it("accepts a v1 token whose appid is the portal", async () => {
+    const t = await token({ azp: undefined, appid: SPA }, { iss: `https://sts.windows.net/${TENANT}/` });
+    expect(await status(authenticate(`Bearer ${t}`, cfg, jwks))).toBe(200);
   });
   it("403 for an app-only token (no scp): every invitation must name a person", async () => {
     expect(await status(authenticate(`Bearer ${await token({ scp: undefined, roles: ["Invitations.ReadWrite"] })}`, cfg, jwks))).toBe(403);

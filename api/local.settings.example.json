@@ -7,6 +7,7 @@
     "TENANT_ID": "7db30361-ce9f-4244-8d28-60553bffff38",
     "API_AUDIENCES": "api://<cs-secure-share-dev-api client id>,<cs-secure-share-dev-api client id>",
     "REQUIRED_SCOPE": "Invitations.ReadWrite",
+    "ALLOWED_CLIENT_IDS": "d25ef5a7-5e7a-4ebf-a06e-f3cbf047294d",
     "ADMIN_GROUP_IDS": "389d5c85-73f2-47dd-8f61-1b916dae4e3e",
 
     "INVITE_REDIRECT_URL": "https://calm-smoke-01ee89410.2.azurestaticapps.net",
